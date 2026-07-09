@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ObjectController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ObjectsController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,7 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::delete('/objects/{object}/soe/flats/{flat}', [ObjectsController::class, 'deleteFlat'])->name('objects.soe.flats.delete')->middleware('admin.only');
     Route::get('/objects/{object}/soe', [ObjectsController::class, 'soe'])->name('objects.soe')->middleware('admin.only');
     Route::post('/objects/{object}/soe/save', [ObjectsController::class, 'saveSoe'])->name('objects.soe.save')->middleware('admin.only');
+    Route::get('/objects/{object}/export', [ExportController::class, 'export'])->name('objects.export')->middleware('admin.only');
     Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('objects.edit')->middleware('admin.only');
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->middleware('admin.only');
     Route::post('/objects/{object}/check', [ObjectController::class, 'check'])->name('objects.check')->middleware('admin.only');

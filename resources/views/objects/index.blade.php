@@ -134,10 +134,12 @@
         .description-cell {
             color: var(--text-muted);
             font-size: 0.9rem;
-            max-width: 250px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            max-width: 400px;
+            white-space: pre-wrap; /* preserve newlines and wrap long lines */
+            word-wrap: break-word;
+            overflow: visible;
+            line-height: .8; /* slightly tighter spacing between lines */
+            margin: 0; /* ensure no extra vertical gap */
         }
 
         .errors-cell {
@@ -389,7 +391,7 @@
                             <tr class="{{ ($object->status == 2 ? 'inactive-row' : '') }} {{ $object->selDate ? 'selected-row' : '' }}">
                                 <td class="address-cell">{{ $object->address }}</td>
                                 <td class="city-cell">{{ $object->City }}</td>
-                                <td class="description-cell">{{ $object->Description ?? '-' }}</td>
+                                <td class="description-cell">{!! nl2br(e($object->Description ?? '-')) !!}</td>
                                 <td>
                                     @if($object->status == 1)
                                         <span class="chip" style="padding: 4px 10px; font-size: 0.85rem; background: #d1fae5;">✓ Active</span>
@@ -434,9 +436,9 @@
                                                 <a href="{{ route('objects.soe', $object->id) }}" class="menu-item">
                                                     ⚙️ SOE
                                                 </a>
-                                                <button class="menu-item" type="button" onclick="if(confirm('Export as CSV?')) { /* export logic */ }">
-                                                    📥 Export CSV
-                                                </button>
+                                                <a href="{{ route('objects.export', $object->id) }}" class="menu-item">
+                                                    📥 Export XLSX
+                                                </a>
                                                 <form method="post" action="{{ route('objects.check', $object->id) }}" style="margin:0;">
                                                     @csrf
                                                     <button type="submit" class="menu-item" onclick="return confirm('Mark as checked?')">
