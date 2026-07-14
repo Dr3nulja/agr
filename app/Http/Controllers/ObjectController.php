@@ -53,9 +53,10 @@ class ObjectController extends Controller
 
         foreach ($objects as $object) {
             $object->selected = $object->selDate ? 'table-success' : '';
-            $object->errors = 0;
-            $object->water_errors = 0;
-            $object->heat_errors = 0;
+            $errorCounts = $legacyObjectsService->getObjectErrorCounts((int) $object->id);
+            $object->errors = $errorCounts['errors'] ?? 0;
+            $object->water_errors = $errorCounts['water_errors'] ?? 0;
+            $object->heat_errors = $errorCounts['heat_errors'] ?? 0;
         }
 
         $companyOptions = AgrObject::query()
