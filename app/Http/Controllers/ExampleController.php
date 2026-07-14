@@ -141,17 +141,17 @@ class ExampleController extends Controller
         ]);
 
         // Получить все логи за последний день
-        $recentLogs = Log::where('created_at', '>=', now()->subDay())
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+        $recentLogs = Log::where('ins_date', '>=', now()->subDay())
+                ->orderBy('ins_date', 'desc')
+                ->get();
 
         // Получить последние 100 логов
-        $logs = Log::orderBy('created_at', 'desc')
-                  ->limit(100)
-                  ->get();
+        $logs = Log::orderBy('ins_date', 'desc')
+              ->limit(100)
+              ->get();
 
         // Удалить старые логи (старше 3 месяцев)
-        Log::where('created_at', '<', now()->subMonths(3))->delete();
+        Log::where('ins_date', '<', now()->subMonths(3))->delete();
     }
 
     /**

@@ -26,7 +26,7 @@ class DashboardController extends Controller
                               ->get();
 
         // Последние логи
-        $recentLogs = Log::orderBy('created_at', 'desc')->limit(10)->get();
+        $recentLogs = Log::orderBy('ins_date', 'desc')->limit(10)->get();
 
         // Объекты без связи (последняя сессия больше суток назад)
         $offlineObjects = AgrObject::where('lastSession', '<', now()->subDay())->count();

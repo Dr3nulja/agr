@@ -106,7 +106,7 @@
                     @foreach($recentLogs as $log)
                         <tr>
                             <td>{{ $log->Content }}</td>
-                            <td>{{ $log->created_at->format('M d, H:i') }}</td>
+                            <td>{{ $log->created_at ? $log->created_at->format('M d, H:i') : '' }}</td>
                         </tr>
                     @endforeach
                 </tbody>
