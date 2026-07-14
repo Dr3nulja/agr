@@ -836,7 +836,7 @@ class LegacyObjectsService
             $query = DB::table($table . ' as O')
                 ->leftJoin($lastDataJoin . ' as L', 'O.devid', '=', 'L.devid')
                 ->orderBy('O.id')
-                ->selectRaw('O.devid, O.id, O.location, O.devtype, L.date, L.value, L.mvalue, L.inserterd, L.error, L.errorDate, L.statDate, L.tariff_1, L.tariff_2, L.tariff_1_mvalue, L.tariff_2_mvalue, if(L.date < DATE_SUB(NOW(), interval 3 DAY) or (L.date is null), 1, 0) as err');
+                ->selectRaw('O.devid, O.id, O.location, O.devtype, L.date, L.value, L.mvalue, L.prevVal, L.inserterd, L.error, L.errorDate, L.statDate, L.tariff_1, L.tariff_2, L.tariff_1_mvalue, L.tariff_2_mvalue, if(L.date < DATE_SUB(NOW(), interval 3 DAY) or (L.date is null), 1, 0) as err');
 
             return $query->get()->map(function ($record): array {
                 $scale = $this->deviceScale((int) $record->devtype);
@@ -851,6 +851,7 @@ class LegacyObjectsService
                     'date' => $record->date ? date('H:i:s d.m.Y', strtotime($record->date)) : '',
                     'value' => isset($record->value) ? $record->value / $scale : 0,
                     'mvalue' => isset($record->mvalue) ? $record->mvalue / $scale : 0,
+                    'prev_mvalue' => isset($record->prevVal) ? $record->prevVal / $scale : 0,
                     'err_class' => (int) $record->err === 1 ? 'table-danger' : '',
                     'rtime' => $record->inserterd ? date('H:i:s d.m.Y', strtotime($record->inserterd)) : '',
                     'etime' => $record->errorDate ? date('d.m.Y', strtotime($record->errorDate)) : '',

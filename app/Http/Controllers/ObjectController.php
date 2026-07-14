@@ -144,13 +144,18 @@ class ObjectController extends Controller
     /**
      * Просмотр объекта
      */
-    public function show($item)
+    public function show($item, LegacyObjectsService $legacyObjectsService)
     {
-        $item = AgrObject::findOrFail($item);
-        $item->load('installData', 'csqLogs');
+        $item = AgrObject::with('installData', 'csqLogs')->findOrFail($item);
+        $devices = $legacyObjectsService->getDevices((int) $item->id, (int) $item->dtype);
+        $errorCounts = $legacyObjectsService->getObjectErrorCounts((int) $item->id);
+
         return view('objects.show', [
             'object' => $item->toArray(),
-            'devices' => []
+            'devices' => $devices,
+            'installData' => $item->installData->toArray(),
+            'csqLogs' => $item->csqLogs->toArray(),
+            'legacyErrorCounts' => $errorCounts,
         ]);
     }
 
