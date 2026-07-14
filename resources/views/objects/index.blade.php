@@ -273,6 +273,60 @@
             border-top: 1px solid var(--border);
         }
 
+        /* Pagination controls styling */
+        .pagination-section nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-section .pagination {
+            display: inline-flex;
+            gap: 8px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            align-items: center;
+        }
+
+        .pagination-section .pagination li a,
+        .pagination-section .pagination li span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+
+        .pagination-section .pagination li.active span {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .pagination-section .pagination li a:hover {
+            background: var(--border);
+        }
+
+        /* Smaller arrow buttons */
+        .pagination-section .pagination li.arrow a,
+        .pagination-section .pagination li.arrow span {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            font-size: 1rem;
+        }
+
         .header-section {
             display: flex;
             justify-content: space-between;
@@ -460,7 +514,88 @@
 
             @if($objects->hasPages())
                 <div class="pagination-section">
-                    {{ $objects->links() }}
+                    <nav aria-label="Pagination Navigation">
+                        <ul class="pagination">
+                            <li class="arrow prev {{ $objects->onFirstPage() ? 'disabled' : '' }}">
+                                @if($objects->onFirstPage())
+                                    <span aria-hidden="true">&laquo;</span>
+                                @else
+                                    <a href="{{ $objects->previousPageUrl() }}" rel="prev" aria-label="Previous">&laquo;</a>
+                                @endif
+                            </li>
+
+                            @php
+                                $last = $objects->lastPage();
+                                $current = $objects->currentPage();
+                                $start = max(1, $current - 2);
+                                $end = min($last, $current + 2);
+                                $urlTemplate = str_replace('999999999', '__PAGE__', $objects->url(999999999));
+                            @endphp
+
+                            @if($start > 1)
+                                <li class="{{ $current == 1 ? 'active' : '' }}">
+                                    @if($current == 1)
+                                        <span>1</span>
+                                    @else
+                                        <a href="{{ $objects->url(1) }}">1</a>
+                                    @endif
+                                </li>
+                                @if($start > 2)
+                                    <li><a href="#" class="jump-ellipsis" data-last="{{ $last }}" data-url-template="{{ $urlTemplate }}">…</a></li>
+                                @endif
+                            @endif
+
+                            @for ($page = $start; $page <= $end; $page++)
+                                <li class="{{ $current == $page ? 'active' : '' }}">
+                                    @if($current == $page)
+                                        <span>{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $objects->url($page) }}">{{ $page }}</a>
+                                    @endif
+                                </li>
+                            @endfor
+
+                            @if($end < $last)
+                                @if($end < $last - 1)
+                                    <li><a href="#" class="jump-ellipsis" data-last="{{ $last }}" data-url-template="{{ $urlTemplate }}">…</a></li>
+                                @endif
+                                <li class="{{ $current == $last ? 'active' : '' }}">
+                                    @if($current == $last)
+                                        <span>{{ $last }}</span>
+                                    @else
+                                        <a href="{{ $objects->url($last) }}">{{ $last }}</a>
+                                    @endif
+                                </li>
+                            @endif
+                            <script>
+                                document.addEventListener('click', function(e){
+                                    var target = e.target;
+                                    if(target.classList && target.classList.contains('jump-ellipsis')){
+                                        e.preventDefault();
+                                        var last = parseInt(target.dataset.last, 10) || 1;
+                                        var template = target.dataset.urlTemplate || '';
+                                        var input = prompt('Перейти на страницу (1 - ' + last + ')');
+                                        if(input === null) return;
+                                        var page = parseInt(input, 10);
+                                        if(isNaN(page) || page < 1 || page > last){
+                                            alert('Неправильный номер страницы');
+                                            return;
+                                        }
+                                        var url = template.replace('__PAGE__', page);
+                                        window.location.href = url;
+                                    }
+                                });
+                            </script>
+
+                            <li class="arrow next {{ $objects->hasMorePages() ? '' : 'disabled' }}">
+                                @if($objects->hasMorePages())
+                                    <a href="{{ $objects->nextPageUrl() }}" rel="next" aria-label="Next">&raquo;</a>
+                                @else
+                                    <span aria-hidden="true">&raquo;</span>
+                                @endif
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
             @endif
         </div>
