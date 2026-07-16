@@ -6,10 +6,15 @@ use Tests\TestCase;
 
 class ExportAlokatorRouteTest extends TestCase
 {
-    public function test_alokator_export_route_is_protected_and_available(): void
+    public function test_export_routes_are_protected_and_available(): void
     {
-        $response = $this->get('/objects/1/export-alokator');
+        $this->get('/objects/1/export-alokator')
+            ->assertRedirect('/login');
 
-        $response->assertRedirect('/login');
+        $this->get('/objects/1/export-korto')
+            ->assertRedirect('/login');
+
+        $this->get('/objects/1/export-month-start')
+            ->assertRedirect('/login');
     }
 }

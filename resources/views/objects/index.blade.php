@@ -490,11 +490,17 @@
                                                 <a href="{{ route('objects.soe', $object->id) }}" class="menu-item">
                                                     ⚙️ SOE
                                                 </a>
-                                                <a href="{{ route('objects.export', $object->id) }}" class="menu-item">
-                                                    📥 Export Water XLSX
+                                                <a href="{{ route('objects.export.current', $object->id) }}" class="menu-item">
+                                                    📥 Export Current Val XLSX
+                                                </a>
+                                                <a href="{{ route('objects.export.month_start', $object->id) }}" class="menu-item">
+                                                    📥 Export Month Start
                                                 </a>
                                                 <a href="{{ route('objects.export.alokator', $object->id) }}" class="menu-item">
                                                     📥 Export Alokator XLSX
+                                                </a>
+                                                <a href="{{ route('objects.export.korto', $object->id) }}" class="menu-item">
+                                                    📥 Export Korto CSV
                                                 </a>
                                                 <form method="post" action="{{ route('objects.check', $object->id) }}" style="margin:0;">
                                                     @csrf
