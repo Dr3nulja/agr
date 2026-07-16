@@ -491,7 +491,10 @@
                                                     ⚙️ SOE
                                                 </a>
                                                 <a href="{{ route('objects.export', $object->id) }}" class="menu-item">
-                                                    📥 Export XLSX
+                                                    📥 Export Water XLSX
+                                                </a>
+                                                <a href="{{ route('objects.export.alokator', $object->id) }}" class="menu-item">
+                                                    📥 Export Alokator XLSX
                                                 </a>
                                                 <form method="post" action="{{ route('objects.check', $object->id) }}" style="margin:0;">
                                                     @csrf

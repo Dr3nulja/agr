@@ -95,4 +95,69 @@ class ExportController extends Controller
             'Cache-Control' => 'max-age=0',
         ]);
     }
+
+    public function exportAlokator(int $objectId)
+    {
+        $fileName = 'Report_Alokator_' . $objectId;
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Report');
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Arial');
+        $spreadsheet->getDefaultStyle()->getFont()->setSize(10);
+
+        $sheet->setCellValue('A3', 'krt. nr.');
+        $sheet->setCellValue('B3', 'soe nr.');
+        $sheet->setCellValue('C3', 'Soemõõtja lõppnäit');
+        $sheet->setCellValue('D3', 'Kulu kuus');
+
+        $sheet->getRowDimension('3')->setRowHeight(41);
+        $sheet->getStyle('A3:D3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:D3')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A3:D3')->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_MEDIUM);
+
+        $object = DB::table('objects')->where('id', $objectId)->first();
+        if ($object) {
+            $address = ($object->address ?? '') . ' ' . ($object->City ?? '');
+            $sheet->setCellValue('A2', $address);
+            $sheet->getStyle('A2')->getFont()->setBold(true);
+            $fileName = 'Report_Alokator_' . preg_replace('/[^A-Za-z0-9_\-]+/', '_', $address);
+        }
+
+        if (! Schema::hasTable('object_' . $objectId) || ! Schema::hasTable('lastdata_' . $objectId)) {
+            return redirect()->back()->with('error', 'Legacy tables for this object are missing.');
+        }
+
+        $data = DB::table('object_' . $objectId . ' as O')
+            ->leftJoin('lastdata_' . $objectId . ' as L', 'O.devid', '=', 'L.devid')
+            ->where(function ($query): void {
+                $query->where('O.devtype', 3)
+                    ->orWhereBetween('O.devtype', [30, 39]);
+            })
+            ->select(['O.devid', 'O.id as object_row_id', 'O.location', 'O.devtype', 'L.date', 'L.value', 'L.mvalue'])
+            ->orderBy('O.id')
+            ->get();
+
+        $i = 5;
+        foreach ($data as $record) {
+            $sheet->setCellValue('A' . $i, $record->location);
+            $sheet->setCellValue('B' . $i, $record->devid);
+            $sheet->setCellValue('C' . $i, $record->value ?? 0);
+            $sheet->setCellValue('D' . $i, $record->mvalue ?? 0);
+            $i++;
+        }
+
+        $sheet->getStyle('A5:B' . ($i - 1))->getFont()->setBold(true);
+        $sheet->getStyle('A5:B' . ($i - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A5:D' . ($i - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer): void {
+            $writer->save('php://output');
+        }, $fileName . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
 }

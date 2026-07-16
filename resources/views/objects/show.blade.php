@@ -141,7 +141,8 @@
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 @if(session('user')->role == 1)
                     <a href="{{ route('objects.edit', $object['id']) }}" class="btn btn-primary">✏️ Edit</a>
-                    <a href="{{ route('objects.export', $object['id']) }}" class="btn btn-secondary">📥 Export XLSX</a>
+                    <a href="{{ route('objects.export', $object['id']) }}" class="btn btn-secondary">📥 Export Water XLSX</a>
+                    <a href="{{ route('objects.export.alokator', $object['id']) }}" class="btn btn-secondary">📥 Export Alokator XLSX</a>
                 @endif
                 <a href="{{ route('objects.index') }}" class="btn btn-secondary">← Back</a>
             </div>
