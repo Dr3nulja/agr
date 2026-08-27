@@ -6,9 +6,9 @@
     <style>
         .panel {
             background: var(--surface);
-            border-radius: 12px;
+            border-radius: 18px;
             padding: 24px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06);
         }
 
         .grid {
@@ -24,7 +24,7 @@
         }
 
         label {
-            font-weight: 600;
+            font-weight: 500;
             font-size: 0.95rem;
             color: var(--text);
         }
@@ -79,27 +79,28 @@
         }
 
         .btn {
-            padding: 10px 16px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
             border: 0;
             font: inherit;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
             font-size: 0.95rem;
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
+            box-shadow: 0 6px 16px -4px oklch(0.62 0.19 270 / 0.4);
         }
 
         .btn-primary:hover {
-            background: var(--primary-light);
+            opacity: 0.9;
         }
 
         .btn-secondary {

@@ -4,11 +4,11 @@
 
 @section('extra-styles')
     <style>
-        .card { padding: 24px; border-radius: 16px; background: var(--surface); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); margin-bottom: 24px; }
+        .card { padding: 24px; border-radius: 18px; background: var(--surface); box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06); margin-bottom: 24px; }
         .meta { color: var(--text-muted); margin: 4px 0 0; }
         .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
-        .btn { border: 0; border-radius: 10px; padding: 10px 16px; background: var(--primary); color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; }
-        .btn:hover { background: var(--primary-light); }
+        .btn { border: 0; border-radius: 999px; padding: 10px 18px; background: var(--primary-grad); color: #fff; font: inherit; font-weight: 500; cursor: pointer; text-decoration: none; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
         .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { background: var(--border); }
         .btn-danger { background: var(--danger); }
@@ -17,7 +17,7 @@
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: left; }
-        th { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+        th { color: var(--text-muted); font-weight: 500; font-size: 0.9rem; }
         .upload { margin-top: 16px; display: grid; gap: 10px; }
         input, select {
             width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); font: inherit; background: var(--surface); color: var(--text); box-sizing: border-box;

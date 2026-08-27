@@ -6,9 +6,9 @@
     <style>
         .panel {
             background: var(--surface);
-            border-radius: 12px;
+            border-radius: 18px;
             padding: 24px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06);
             max-width: 600px;
         }
 
@@ -25,12 +25,12 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 2rem;
             flex-shrink: 0;
         }
@@ -53,7 +53,7 @@
         .info-group-title {
             font-size: 0.85rem;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 12px;
@@ -78,20 +78,20 @@
 
         .info-value {
             color: var(--text);
-            font-weight: 600;
+            font-weight: 500;
             font-size: 0.95rem;
         }
 
         .badge {
             display: inline-block;
             padding: 4px 12px;
-            border-radius: 6px;
+            border-radius: 999px;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .badge-admin {
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
         }
 
@@ -107,27 +107,27 @@
         }
 
         .btn {
-            padding: 10px 16px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
             border: 0;
             font: inherit;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
             font-size: 0.95rem;
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
         }
 
         .btn-primary:hover {
-            background: var(--primary-light);
+            opacity: 0.9;
         }
 
         .btn-secondary {

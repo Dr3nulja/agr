@@ -4,13 +4,13 @@
 
 @section('extra-styles')
     <style>
-        .card { padding: 24px; border-radius: 16px; background: var(--surface); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); max-width: 600px; }
+        .card { padding: 24px; border-radius: 18px; background: var(--surface); box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06); max-width: 600px; }
         .meta { color: var(--text-muted); margin: 4px 0 0; }
         .field { margin-top: 18px; display: grid; gap: 8px; }
         input[type="file"] { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
         .actions { margin-top: 20px; display: flex; gap: 12px; }
-        .btn { border: 0; border-radius: 10px; padding: 10px 16px; background: var(--primary); color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; }
-        .btn:hover { background: var(--primary-light); }
+        .btn { border: 0; border-radius: 999px; padding: 10px 18px; background: var(--primary-grad); color: #fff; font: inherit; font-weight: 500; cursor: pointer; text-decoration: none; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
         .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
         .btn-secondary:hover { background: var(--border); }
         .hint { margin-top: 14px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }

@@ -6,9 +6,9 @@
     <style>
         .filter-section {
             background: var(--surface);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 16px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+            box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06);
             margin-bottom: 16px;
         }
 
@@ -31,8 +31,8 @@
             align-items: center;
             gap: 6px;
             padding: 6px 12px;
-            border-radius: 20px;
-            background: var(--primary);
+            border-radius: 999px;
+            background: var(--primary-grad);
             color: white;
             font-size: 0.9rem;
             font-weight: 500;
@@ -41,11 +41,46 @@
         }
 
         .chip:hover {
-            background: var(--primary-light);
+            opacity: 0.9;
         }
 
         .chip.inactive {
-            background: #94a3b8;
+            background: oklch(0.7 0.01 270);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 11px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .status-pill.is-active {
+            background: oklch(0.95 0.05 155);
+            color: oklch(0.4 0.1 155);
+            border-color: oklch(0.75 0.1 155);
+        }
+
+        .status-pill.is-inactive {
+            background: oklch(0.95 0.01 270);
+            color: var(--text-muted);
+            border-color: var(--border);
+        }
+
+        .status-pill.is-checked {
+            background: oklch(0.94 0.05 240);
+            color: oklch(0.42 0.13 254);
+            border-color: oklch(0.75 0.1 254);
+        }
+
+        .status-pill.is-unchecked {
+            background: oklch(0.95 0.01 270);
+            color: var(--text-faint);
+            border-color: var(--border);
         }
 
         .chip-close {
@@ -55,8 +90,8 @@
 
         .objects-table {
             background: var(--surface);
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+            border-radius: 16px;
+            box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06);
             overflow: visible;
         }
 
@@ -78,7 +113,7 @@
         th {
             padding: 12px 14px;
             text-align: left;
-            font-weight: 600;
+            font-weight: 500;
             font-size: 0.9rem;
             color: var(--text-muted);
             white-space: nowrap;
@@ -115,7 +150,7 @@
         }
 
         .address-cell {
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text);
             max-width: 180px;
             white-space: nowrap;
@@ -138,12 +173,12 @@
             white-space: pre-wrap; /* preserve newlines and wrap long lines */
             word-wrap: break-word;
             overflow: visible;
-            line-height: .8; /* slightly tighter spacing between lines */
-            margin: 0; /* ensure no extra vertical gap */
+            line-height: 1.45;
+            margin: 0;
         }
 
         .errors-cell {
-            font-weight: 600;
+            font-weight: 500;
             text-align: center;
         }
 
@@ -175,7 +210,7 @@
         }
 
         .fw-cell {
-            font-family: monospace;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
             font-size: 0.85rem;
             color: var(--text-muted);
         }
@@ -308,10 +343,10 @@
         }
 
         .pagination-section .pagination li.active span {
-            background: var(--primary);
+            background: var(--primary-grad);
             color: #fff;
-            border-color: var(--primary);
-            font-weight: 600;
+            border-color: transparent;
+            font-weight: 500;
         }
 
         .pagination-section .pagination li a:hover {
@@ -339,22 +374,23 @@
         }
 
         .create-btn {
-            padding: 10px 16px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
             border: 0;
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
+            box-shadow: 0 6px 16px -4px oklch(0.62 0.19 270 / 0.4);
         }
 
         .create-btn:hover {
-            background: var(--primary-light);
+            opacity: 0.9;
         }
     </style>
 @endsection
@@ -389,7 +425,7 @@
                 <select name="company" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
                     <option value="">All Installers</option>
                     @foreach($companyOptions as $company)
-                        <option value="{{ $company }}" {{ request('company') == $company ? 'selected' : '' }}>Installer #{{ $company }}</option>
+                        <option value="{{ $company }}" {{ request('company') == $company ? 'selected' : '' }}>{{ ['1' => 'AGR', '2' => 'Prem'][(string) $company] ?? 'Installer #' . $company }}</option>
                     @endforeach
                 </select>
 
@@ -449,14 +485,14 @@
                                 <td class="description-cell">{!! nl2br(e($object->Description ?? '-')) !!}</td>
                                 <td>
                                     @if($object->status == 1)
-                                        <span class="chip" style="padding: 4px 10px; font-size: 0.85rem; background: #d1fae5;">✓ Active</span>
+                                        <span class="status-pill is-active">✓ Active</span>
                                     @elseif($object->status == 2)
-                                        <span class="chip inactive" style="padding: 4px 10px; font-size: 0.85rem;">✕ Inactive</span>
+                                        <span class="status-pill is-inactive">✕ Inactive</span>
                                     @else
-                                        <span class="chip inactive" style="padding: 4px 10px; font-size: 0.85rem;">Unknown</span>
+                                        <span class="status-pill is-inactive">Unknown</span>
                                     @endif
                                 </td>
-                                <td>{{ $object->Company ?? '-' }}</td>
+                                <td>{{ ['1' => 'AGR', '2' => 'Prem'][(string) $object->Company] ?? ($object->Company ?? '-') }}</td>
                                 <td>
                                     @if($object->dtype == 1) 💧 Apator
                                     @elseif($object->dtype == 2) 🔥 Siemens
@@ -466,9 +502,9 @@
                                 </td>
                                 <td>
                                     @if($object->selDate)
-                                        <span class="chip" style="padding: 4px 10px; font-size: 0.85rem; background: #d1fae5;">Checked</span>
+                                        <span class="status-pill is-checked">Checked</span>
                                     @else
-                                        <span class="chip inactive" style="padding: 4px 10px; font-size: 0.85rem;">Unchecked</span>
+                                        <span class="status-pill is-unchecked">Unchecked</span>
                                     @endif
                                 </td>
                                 <td>{{ $object->Devqtty ?? 0 }}</td>

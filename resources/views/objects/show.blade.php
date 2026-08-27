@@ -6,9 +6,9 @@
     <style>
         .panel {
             background: var(--surface);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+            border-radius: 18px;
+            padding: 20px 22px;
+            box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06);
             margin-bottom: 20px;
         }
 
@@ -20,23 +20,23 @@
         }
 
         .info-box {
-            padding: 12px;
+            padding: 12px 14px;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
         .info-label {
             font-size: 0.85rem;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 500;
             margin-bottom: 4px;
             text-transform: uppercase;
         }
 
         .info-value {
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text);
         }
 
@@ -48,26 +48,27 @@
         }
 
         .btn {
-            padding: 10px 16px;
-            border-radius: 8px;
+            padding: 10px 18px;
+            border-radius: 999px;
             border: 0;
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             font-size: 0.95rem;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
+            box-shadow: 0 6px 16px -4px oklch(0.62 0.19 270 / 0.4);
         }
 
         .btn-primary:hover {
-            background: var(--primary-light);
+            opacity: 0.9;
         }
 
         .btn-secondary {
@@ -82,7 +83,7 @@
 
         .section-title {
             font-size: 1.3rem;
-            font-weight: 600;
+            font-weight: 500;
             margin-top: 24px;
             margin-bottom: 12px;
             color: var(--text);
@@ -111,7 +112,7 @@
         .legacy-table th {
             background: rgba(15, 23, 42, 0.04);
             text-align: left;
-            font-weight: 700;
+            font-weight: 500;
         }
 
         .device-table tbody tr:hover,
@@ -124,8 +125,10 @@
         }
 
         .device-id {
-            font-weight: 700;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            font-weight: 500;
         }
+
     </style>
 @endsection
 
@@ -288,7 +291,7 @@
                                 $curr = $device['mvalue'] ?? 0;
                                 $delta = $curr - $prev;
                             @endphp
-                            <tr class="{{ $device['err_class'] ? 'row-error' : '' }}">
+                            <tr class="{{ $device['err_class'] ? 'row-error' : '' }} device-row {{ $loop->iteration > 25 ? 'row-limited' : '' }}">
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $device['location'] ?? '-' }}</td>
                                 <td class="device-id">{{ $device['devid'] }}</td>
@@ -304,9 +307,19 @@
                 </table>
             </div>
 
+            @if(count($devices) > 25)
+                <div style="text-align:center; margin-top:14px;">
+                    <button type="button" id="deviceShowMoreBtn" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
+                        Show all {{ count($devices) }} devices
+                    </button>
+                </div>
+            @endif
+
             <div class="panel" style="margin-top: 10px;">
-                <h3 class="section-title">🧾 Legacy Device Details</h3>
-                <div style="overflow-x:auto;">
+                <button type="button" id="legacyDetailsToggle" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
+                    🧾 Show Legacy Device Details ({{ count($devices) }})
+                </button>
+                <div id="legacyDetailsPanel" style="display:none; margin-top: 16px; overflow-x:auto;">
                     <table class="legacy-table" style="width:100%; border-collapse: collapse; min-width: 1020px;">
                         <thead>
                             <tr>
@@ -427,13 +440,52 @@
     <script>
         const deviceSearch = document.getElementById('deviceSearch');
         const deviceRows = document.querySelectorAll('#deviceTableBody tr');
+        const showMoreBtn = document.getElementById('deviceShowMoreBtn');
+        let showingAll = false;
+
+        // Hide rows past the initial limit via inline style, so later toggles
+        // (which also set inline style) aren't fought by a stylesheet rule.
+        deviceRows.forEach(row => {
+            if (row.classList.contains('row-limited')) {
+                row.style.display = 'none';
+            }
+        });
 
         if (deviceSearch) {
             deviceSearch.addEventListener('input', function () {
                 const query = this.value.toLowerCase();
+                const searching = query.length > 0;
                 deviceRows.forEach(row => {
-                    row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+                    const matches = row.textContent.toLowerCase().includes(query);
+                    if (!matches) {
+                        row.style.display = 'none';
+                        return;
+                    }
+                    // While searching, ignore the row-limited collapse so matches aren't hidden.
+                    row.style.display = (!searching && row.classList.contains('row-limited') && !showingAll) ? 'none' : '';
                 });
+            });
+        }
+
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener('click', function () {
+                showingAll = !showingAll;
+                deviceRows.forEach(row => {
+                    if (row.classList.contains('row-limited')) {
+                        row.style.display = showingAll ? '' : 'none';
+                    }
+                });
+                this.textContent = showingAll ? 'Show fewer devices' : 'Show all ' + deviceRows.length + ' devices';
+            });
+        }
+
+        const legacyToggle = document.getElementById('legacyDetailsToggle');
+        const legacyPanel = document.getElementById('legacyDetailsPanel');
+
+        if (legacyToggle && legacyPanel) {
+            legacyToggle.addEventListener('click', function () {
+                const isHidden = legacyPanel.style.display === 'none';
+                legacyPanel.style.display = isHidden ? 'block' : 'none';
             });
         }
     </script>

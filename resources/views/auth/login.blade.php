@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap">
     <style>
         :root {
-            --bg: #111827;
             --panel: #f8fafc;
-            --text: #0f172a;
-            --muted: #64748b;
-            --accent: #0f766e;
+            --text: oklch(0.24 0.02 270);
+            --muted: oklch(0.5 0.02 270);
+            --accent: oklch(0.62 0.19 254);
+            --accent-2: oklch(0.62 0.18 305);
             --line: #dbe4ea;
             --danger: #b91c1c;
         }
@@ -20,9 +21,9 @@
             min-height: 100vh;
             display: grid;
             place-items: center;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Sora', system-ui, sans-serif;
             background:
-                radial-gradient(circle at top left, rgba(15, 118, 110, 0.24), transparent 30%),
+                radial-gradient(circle at top left, oklch(0.62 0.19 270 / 0.14), transparent 30%),
                 linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             color: var(--text);
         }
@@ -53,15 +54,15 @@
             width: fit-content;
             padding: 8px 14px;
             border-radius: 999px;
-            background: rgba(15, 118, 110, 0.12);
+            background: oklch(0.62 0.19 270 / 0.12);
             color: var(--accent);
-            font-weight: 700;
+            font-weight: 500;
         }
         h1 {
             margin: 18px 0 12px;
-            font-size: clamp(2.2rem, 5vw, 4.2rem);
-            line-height: 0.98;
-            letter-spacing: -0.04em;
+            font-size: clamp(2rem, 4.4vw, 3.6rem);
+            line-height: 1.18;
+            letter-spacing: -0.02em;
         }
         .hero p {
             margin: 0;
@@ -93,7 +94,7 @@
         label {
             font-size: 0.92rem;
             color: var(--muted);
-            font-weight: 700;
+            font-weight: 500;
         }
         input {
             width: 100%;
@@ -110,10 +111,15 @@
             border-radius: 16px;
             padding: 14px 16px;
             font: inherit;
-            font-weight: 700;
+            font-weight: 500;
             color: #fff;
-            background: linear-gradient(135deg, #0f766e, #134e4a);
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 10px 24px -6px oklch(0.62 0.19 270 / 0.45);
             cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover {
+            opacity: 0.92;
         }
         .errors {
             margin: 0 0 16px;

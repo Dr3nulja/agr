@@ -4,23 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'AGR Dashboard')</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
     <style>
         :root {
-            --primary: #0f766e;
-            --primary-light: #14b8a6;
-            --bg: #f5f7fb;
-            --surface: #fff;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --danger: #dc2626;
+            --primary: oklch(0.62 0.19 254);
+            --primary-light: oklch(0.62 0.18 305);
+            --primary-grad: linear-gradient(135deg, oklch(0.62 0.19 254), oklch(0.62 0.18 305));
+            --bg: oklch(0.975 0.008 270);
+            --surface: oklch(1 0 0);
+            --text: oklch(0.24 0.02 270);
+            --text-muted: oklch(0.5 0.02 270);
+            --text-faint: oklch(0.62 0.02 270);
+            --border: oklch(0.9 0.01 270);
+            --danger: oklch(0.6 0.21 20);
+            --good: oklch(0.68 0.15 155);
+            --warn: oklch(0.72 0.15 65);
         }
 
         * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-family: 'Sora', system-ui, -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
         }
@@ -29,7 +34,6 @@
         .navbar {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -42,13 +46,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 70px;
+            height: 76px;
         }
 
         .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            color: var(--text);
             text-decoration: none;
             display: flex;
             align-items: center;
@@ -56,45 +61,50 @@
         }
 
         .navbar-logo {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            border-radius: 8px;
+            width: 38px;
+            height: 38px;
+            background: var(--primary-grad);
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: 700;
-            font-size: 1.1rem;
+            box-shadow: 0 6px 16px -4px oklch(0.62 0.19 270 / 0.4);
         }
 
         .navbar-center {
             display: flex;
-            gap: 32px;
-            flex: 1;
-            margin-left: 48px;
+            gap: 6px;
+            background: var(--bg);
+            border-radius: 999px;
+            padding: 4px;
+            margin-left: 32px;
         }
 
         .navbar-link {
             color: var(--text-muted);
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.95rem;
-            padding: 8px 0;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
+            font-size: 0.88rem;
+            padding: 9px 20px;
+            border-radius: 999px;
+            transition: all 0.15s;
         }
 
-        .navbar-link:hover,
+        .navbar-link:hover {
+            color: var(--text);
+        }
+
         .navbar-link.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+            color: var(--text);
+            background: var(--surface);
+            box-shadow: 0 1px 4px oklch(0 0 0 / 0.08);
         }
 
         .navbar-right {
             display: flex;
             align-items: center;
-            gap: 24px;
+            gap: 20px;
         }
 
         .navbar-user {
@@ -104,45 +114,46 @@
         }
 
         .navbar-user-avatar {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: var(--primary);
+            background: var(--primary-grad);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 1.1rem;
+            font-weight: 500;
+            font-size: 1rem;
         }
 
         .navbar-user-info {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
 
         .navbar-user-name {
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 500;
+            font-size: 0.85rem;
             color: var(--text);
         }
 
         .navbar-user-role {
-            font-size: 0.8rem;
-            color: var(--text-muted);
+            font-size: 0.75rem;
+            color: var(--text-faint);
         }
 
         .navbar-btn {
             padding: 8px 16px;
-            border-radius: 8px;
+            border-radius: 999px;
             background: var(--bg);
             border: none;
             color: var(--danger);
-            font-weight: 600;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            transition: all 0.15s;
+            font-size: 0.85rem;
+            font-family: inherit;
         }
 
         .navbar-btn:hover {
@@ -164,8 +175,12 @@
             }
 
             .navbar-center {
-                margin-left: 24px;
-                gap: 16px;
+                margin-left: 16px;
+                gap: 2px;
+            }
+
+            .navbar-link {
+                padding: 9px 12px;
             }
 
             .navbar-right {
@@ -189,16 +204,18 @@
     <nav class="navbar">
         <div class="navbar-content">
             <a href="{{ route('dashboard') }}" class="navbar-brand">
-                <div class="navbar-logo">⚙️</div>
+                <div class="navbar-logo">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V9l8-5 8 5v8"/><path d="M9 21v-6h6v6"/></svg>
+                </div>
                 <span>AGR</span>
             </a>
 
             <div class="navbar-center">
                 <a href="{{ route('dashboard') }}" class="navbar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    📊 Dashboard
+                    Dashboard
                 </a>
                 <a href="{{ route('objects.index') }}" class="navbar-link {{ request()->routeIs('objects.*') ? 'active' : '' }}">
-                    🏠 Objects
+                    Objects
                 </a>
             </div>
 
