@@ -401,9 +401,10 @@
 
                 <select name="dtype" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
                     <option value="">All Systems</option>
-                    <option value="1" {{ request('dtype') == 1 ? 'selected' : '' }}>💧 Water</option>
-                    <option value="2" {{ request('dtype') == 2 ? 'selected' : '' }}>🔥 Gas</option>
-                    <option value="3" {{ request('dtype') == 3 ? 'selected' : '' }}>⚡ Electric</option>
+                    <option value="1" {{ request('dtype') == 1 ? 'selected' : '' }}>💧 Apator</option>
+                    <option value="2" {{ request('dtype') == 2 ? 'selected' : '' }}>🔥 Siemens</option>
+                    <option value="3" {{ request('dtype') == 3 ? 'selected' : '' }}>⚡ Elekter</option>
+                    <option value="4" {{ request('dtype') == 4 ? 'selected' : '' }}>📡 LoRa</option>
                 </select>
 
                 <select name="checked" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
@@ -457,9 +458,10 @@
                                 </td>
                                 <td>{{ $object->Company ?? '-' }}</td>
                                 <td>
-                                    @if($object->dtype == 1) 💧 Water
-                                    @elseif($object->dtype == 2) 🔥 Gas
-                                    @elseif($object->dtype == 3) ⚡ Electric
+                                    @if($object->dtype == 1) 💧 Apator
+                                    @elseif($object->dtype == 2) 🔥 Siemens
+                                    @elseif($object->dtype == 3) ⚡ Elekter
+                                    @elseif($object->dtype == 4) 📡 LoRa
                                     @else {{ $object->dtype }} @endif
                                 </td>
                                 <td>

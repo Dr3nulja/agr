@@ -122,12 +122,6 @@
             background: rgba(185, 28, 28, 0.08);
             color: var(--danger);
         }
-        .hint {
-            margin-top: 14px;
-            color: var(--muted);
-            font-size: 0.92rem;
-            line-height: 1.5;
-        }
         @media (max-width: 860px) {
             .shell { grid-template-columns: 1fr; }
             .hero { min-height: auto; }
@@ -138,18 +132,18 @@
     <main class="shell">
         <section class="hero">
             <div>
-                <div class="badge">Stage 1: login slice</div>
-                <h1>Legacy access, rebuilt as a clean Laravel entry point.</h1>
+                <div class="badge">AGR</div>
+                <h1>Metering & billing, in one place.</h1>
                 <p>
-                    This is the first working migration slice: authentication, session state,
-                    and the main landing flow.
+                    Sign in to manage objects, devices, and meter readings for water,
+                    heat, and electricity accounting.
                 </p>
             </div>
 
             <div class="steps">
-                <div class="step">1. Open the login page</div>
-                <div class="step">2. Validate credentials against the legacy users table</div>
-                <div class="step">3. Store session values and move to the dashboard</div>
+                <div class="step">💧 Water & heat meter readings</div>
+                <div class="step">⚡ Electricity monitoring</div>
+                <div class="step">📊 Exports, SOE settings & device management</div>
             </div>
         </section>
 
@@ -174,11 +168,6 @@
                 </div>
 
                 <button type="submit">Sign in</button>
-
-                <div class="hint">
-                    Legacy behavior is preserved for now: the system still checks the existing
-                    <code>users</code> table and session keys.
-                </div>
             </form>
         </section>
     </main>

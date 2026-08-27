@@ -135,12 +135,14 @@
             <div>
                 <h2 style="margin-bottom: 4px;">{{ $object['address'] }}</h2>
                 <div style="color: var(--text-muted);">
-                    {{ $object['City'] ?? '—' }} · {{ $object['dtype'] == 1 ? 'külm' : ($object['dtype'] == 2 ? 'soe' : ($object['dtype'] == 3 ? 'electric' : 'type ' . $object['dtype'])) }} · IMEI: {{ $object['IMEI'] ?? '—' }}
+                    {{ $object['City'] ?? '—' }} · {{ ['1' => 'Apator', '2' => 'Siemens', '3' => 'Elekter', '4' => 'LoRa'][(string) $object['dtype']] ?? 'type ' . $object['dtype'] }} · IMEI: {{ $object['IMEI'] ?? '—' }}
                 </div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 @if(session('user')->role == 1)
                     <a href="{{ route('objects.edit', $object['id']) }}" class="btn btn-primary">✏️ Edit</a>
+                    <a href="{{ route('objects.devices.upload', $object['id']) }}" class="btn btn-secondary">📤 Upload Device List</a>
+                    <a href="{{ route('objects.import-csv', $object['id']) }}" class="btn btn-secondary">📄 Import CSV</a>
                     <a href="{{ route('objects.export.current', $object['id']) }}" class="btn btn-secondary">📥 Export Current Val XLSX</a>
                     <a href="{{ route('objects.export.month_start', $object['id']) }}" class="btn btn-secondary">📥 Export Month Start</a>
                     <a href="{{ route('objects.export.alokator', $object['id']) }}" class="btn btn-secondary">📥 Export Alokator XLSX</a>
@@ -170,6 +172,14 @@
                 <div class="info-value">{{ $object['selDate'] ? date('d.m.Y H:i', strtotime($object['selDate'])) : 'No' }}</div>
             </div>
             <div class="info-box">
+                <div class="info-label">Last Communication</div>
+                <div class="info-value">{{ !empty($object['lastSession']) ? date('d.m.Y H:i', strtotime($object['lastSession'])) : '—' }}</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">FW Version</div>
+                <div class="info-value">{{ $object['ver'] ?? '—' }}</div>
+            </div>
+            <div class="info-box">
                 <div class="info-label">Device Rows</div>
                 <div class="info-value">{{ count($devices) }}</div>
             </div>
@@ -179,6 +189,21 @@
             </div>
         </div>
     </div>
+
+    @if(session('user')->role == 1)
+        <div class="panel">
+            <h3 class="section-title">📡 Send Command</h3>
+            <form method="post" action="{{ route('objects.command', $object['id']) }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                @csrf
+                <select name="command" required style="padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+                    @foreach($commands as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+        </div>
+    @endif
 
     <div class="panel">
         <h3 class="section-title">🧾 Object Info</h3>

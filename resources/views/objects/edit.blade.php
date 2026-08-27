@@ -52,6 +52,25 @@
 
         .span-2 { grid-column: span 2; }
 
+        .radio-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 10px 0 2px;
+        }
+
+        .radio-row label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .radio-row input[type="radio"] {
+            width: auto;
+        }
+
         .actions {
             margin-top: 24px;
             display: flex;
@@ -139,20 +158,33 @@
                 <div class="field"><label>Radio Device Quantity</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', $object['RadioDevQty'] ?? 0) }}"></div>
                 <div class="field"><label>Main Radio Location</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', $object['MainRadio'] ?? 0) }}"></div>
                 <div class="field"><label>Key Code</label><input name="KeyCode" value="{{ old('KeyCode', $object['KeyCode'] ?? '') }}"></div>
-                <div class="field"><label>Manager</label><input name="manager" type="number" min="0" value="{{ old('manager', $object['manager'] ?? 0) }}"></div>
                 <div class="field"><label>Package</label><input name="packet" value="{{ old('packet', $object['packet'] ?? '') }}"></div>
                 <div class="field"><label>Traffic</label><input name="traffic" value="{{ old('traffic', $object['traffic'] ?? '') }}"></div>
                 <div class="field"><label>Call Count</label><input name="callCnt" type="number" min="0" value="{{ old('callCnt', $object['callCnt'] ?? 0) }}"></div>
                 <div class="field"><label>Sum</label><input name="summ" type="number" step="0.01" min="0" value="{{ old('summ', $object['summ'] ?? 0) }}"></div>
                 <div class="field"><label>Latitude</label><input name="lat" type="number" step="0.000001" value="{{ old('lat', $object['lat'] ?? '') }}"></div>
                 <div class="field"><label>Longitude</label><input name="lon" type="number" step="0.000001" value="{{ old('lon', $object['lon'] ?? '') }}"></div>
-                <div class="field"><label>Company / Installer</label><input name="Company" type="number" min="1" value="{{ old('Company', $object['Company'] ?? 1) }}"></div>
-                <div class="field"><label>System</label>
-                    <select name="dtype">
-                        <option value="1" {{ old('dtype', $object['dtype'] ?? '') == '1' ? 'selected' : '' }}>💧 Water</option>
-                        <option value="2" {{ old('dtype', $object['dtype'] ?? '') == '2' ? 'selected' : '' }}>🔥 Gas</option>
-                        <option value="3" {{ old('dtype', $object['dtype'] ?? '') == '3' ? 'selected' : '' }}>⚡ Electric</option>
-                    </select>
+                <div class="field span-2"><label>Installer</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="Company" value="1" {{ old('Company', $object['Company'] ?? 1) == 1 ? 'checked' : '' }}> AGR</label>
+                        <label><input type="radio" name="Company" value="2" {{ old('Company', $object['Company'] ?? 1) == 2 ? 'checked' : '' }}> Prem</label>
+                    </div>
+                </div>
+                <div class="field span-2"><label>System</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="dtype" value="1" {{ old('dtype', $object['dtype'] ?? 1) == 1 ? 'checked' : '' }}> Apator</label>
+                        <label><input type="radio" name="dtype" value="2" {{ old('dtype', $object['dtype'] ?? 1) == 2 ? 'checked' : '' }}> Siemens</label>
+                        <label><input type="radio" name="dtype" value="3" {{ old('dtype', $object['dtype'] ?? 1) == 3 ? 'checked' : '' }}> Elekter</label>
+                        <label><input type="radio" name="dtype" value="4" {{ old('dtype', $object['dtype'] ?? 1) == 4 ? 'checked' : '' }}> LoRa</label>
+                    </div>
+                </div>
+                <div class="field span-2"><label>Manager</label>
+                    <div class="radio-row">
+                        <label><input type="radio" name="manager" value="1" {{ old('manager', $object['manager'] ?? 1) == 1 ? 'checked' : '' }}> IRA</label>
+                        <label><input type="radio" name="manager" value="2" {{ old('manager', $object['manager'] ?? 1) == 2 ? 'checked' : '' }}> KAT</label>
+                        <label><input type="radio" name="manager" value="3" {{ old('manager', $object['manager'] ?? 1) == 3 ? 'checked' : '' }}> REG</label>
+                        <label><input type="radio" name="manager" value="4" {{ old('manager', $object['manager'] ?? 1) == 4 ? 'checked' : '' }}> NAT</label>
+                    </div>
                 </div>
                 <div class="field"><label>Status</label>
                     <select name="status">

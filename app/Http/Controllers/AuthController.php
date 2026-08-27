@@ -25,12 +25,16 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('login', $validated['login'])
-                   ->where('pass', md5($validated['password']))
-                   ->first();
+        $user = User::where('login', $validated['login'])->first();
 
-        if (!$user) {
+        if (!$user || !$user->verifyPassword($validated['password'])) {
             return back()->withErrors(['login' => 'Неверные учетные данные'])->onlyInput('login');
+        }
+
+        // Прозрачно переводим старые MD5-хэши на bcrypt при успешном входе
+        if ($user->isLegacyMd5Hash()) {
+            $user->pass = $validated['password'];
+            $user->save();
         }
 
         // Сохраняем данные в сессию

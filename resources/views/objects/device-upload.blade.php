@@ -1,39 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload device list</title>
+@extends('layouts.app')
+
+@section('title', 'Upload Device List - AGR')
+
+@section('extra-styles')
     <style>
-        body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f5f7fb; color: #0f172a; }
-        .page { max-width: 900px; margin: 0 auto; padding: 24px; }
-        .panel { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08); }
-        .meta { color: #64748b; }
+        .card { padding: 24px; border-radius: 16px; background: var(--surface); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06); max-width: 600px; }
+        .meta { color: var(--text-muted); margin: 4px 0 0; }
         .field { margin-top: 18px; display: grid; gap: 8px; }
-        input[type="file"] { padding: 12px; border: 1px solid #dbe4ea; border-radius: 14px; background: #fff; }
+        input[type="file"] { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
         .actions { margin-top: 20px; display: flex; gap: 12px; }
-        .btn { border: 0; border-radius: 14px; padding: 12px 16px; background: #0f766e; color: #fff; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .btn { border: 0; border-radius: 10px; padding: 10px 16px; background: var(--primary); color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-light); }
+        .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        .hint { margin-top: 14px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
     </style>
-</head>
-<body>
-    <div class="page">
-        <div class="panel">
-            <h1>Upload device list</h1>
-            <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
+@endsection
 
-            <form method="post" action="{{ route('objects.devices.upload.store', $object['id']) }}" enctype="multipart/form-data">
-                @csrf
-                <div class="field">
-                    <label for="fileToUpload">Choose semicolon-separated file</label>
-                    <input type="file" id="fileToUpload" name="fileToUpload" required>
-                </div>
+@section('content')
+    <div class="card">
+        <h2>📤 Upload device list</h2>
+        <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
 
-                <div class="actions">
-                    <button class="btn" type="submit">Upload</button>
-                    <a class="btn" href="{{ route('objects.show', $object['id']) }}" style="background:#475569;">Cancel</a>
-                </div>
-            </form>
-        </div>
+        <form method="post" action="{{ route('objects.devices.upload.store', $object['id']) }}" enctype="multipart/form-data">
+            @csrf
+            <div class="field">
+                <label for="fileToUpload">Choose semicolon-separated file</label>
+                <input type="file" id="fileToUpload" name="fileToUpload" required>
+            </div>
+
+            <div class="actions">
+                <button class="btn" type="submit">Upload</button>
+                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Cancel</a>
+            </div>
+
+            <p class="hint">Replaces the full device list for this object. Format: id;devid;location;type (one per line).</p>
+        </form>
     </div>
-</body>
-</html>
+@endsection

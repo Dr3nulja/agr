@@ -137,6 +137,10 @@ class LegacyObjectsService
 
     public function replaceFlatList(int $objectId, string $filePath): void
     {
+        if (! Schema::hasTable('flat_' . $objectId)) {
+            return;
+        }
+
         $this->dropFlatListData($objectId);
 
         $handle = fopen($filePath, 'r');
@@ -169,8 +173,51 @@ class LegacyObjectsService
         fclose($handle);
     }
 
+    public function replaceRadiatorList(int $objectId, string $filePath): void
+    {
+        if (! Schema::hasTable('heat_' . $objectId)) {
+            return;
+        }
+
+        DB::statement('TRUNCATE TABLE heat_' . $objectId);
+
+        $handle = fopen($filePath, 'r');
+
+        if ($handle === false) {
+            return;
+        }
+
+        $rowIndex = 0;
+
+        while (($line = fgets($handle)) !== false) {
+            $rowIndex++;
+            $fields = array_map('trim', explode(';', $line));
+
+            // Legacy skips the first 4 header/meta lines of the export.
+            if ($rowIndex <= 4) {
+                continue;
+            }
+
+            if (count($fields) >= 6 && $fields[2] !== '') {
+                DB::table('heat_' . $objectId)->insertOrIgnore([
+                    'devid' => $fields[2],
+                    'power' => $fields[3],
+                    'cof' => $fields[4],
+                    'size' => $fields[5],
+                    'description' => '',
+                ]);
+            }
+        }
+
+        fclose($handle);
+    }
+
     public function replaceDeviceList(int $objectId, string $filePath): void
     {
+        if (! Schema::hasTable('object_' . $objectId)) {
+            return;
+        }
+
         $this->dropDeviceListData($objectId);
 
         $handle = fopen($filePath, 'r');
@@ -398,7 +445,10 @@ class LegacyObjectsService
         return $rows;
     }
 
-    public function getCommandOptions(): array
+    /**
+     * Full code => device command-string map, matches addnew.class.php::addRequest.
+     */
+    private function allCommands(): array
     {
         return [
             1 => 'restart',
@@ -409,9 +459,31 @@ class LegacyObjectsService
         ];
     }
 
+    /**
+     * Which commands are offered per system type - Siemens exposes a
+     * different subset than Apator/Elekter/LoRa (command_si.tpl vs command_apa.tpl).
+     */
+    public function getCommandOptions(int $dtype = 1): array
+    {
+        if ($dtype === 2) {
+            return [
+                1 => 'Restart',
+                3 => 'Send data from memory',
+                4 => 'Send Search',
+                5 => 'Send ExtLong search',
+            ];
+        }
+
+        return [
+            1 => 'Restart',
+            2 => 'Reload devices list',
+            3 => 'Send data from memory',
+        ];
+    }
+
     public function queueCommand(int $objectId, int $commandType): void
     {
-        $commands = $this->getCommandOptions();
+        $commands = $this->allCommands();
 
         if (! isset($commands[$commandType])) {
             return;
@@ -419,7 +491,7 @@ class LegacyObjectsService
 
         DB::table('requests')->insert([
             'object' => $objectId,
-            'Content' => $commands[$commandType],
+            'content' => $commands[$commandType],
             'date' => now(),
             'handled' => 0,
         ]);
@@ -642,7 +714,7 @@ class LegacyObjectsService
                 'handled' => 1,
             ]);
 
-        return (string) $request->Content;
+        return (string) $request->content;
     }
 
     private function findObjectIdByImei(string $imei): ?int
@@ -737,6 +809,366 @@ class LegacyObjectsService
         return $value >= 2147483648 ? $value - 4294967296 : $value;
     }
 
+    /**
+     * Import a legacy Apator "water" meter-reading CSV export. Every row shares
+     * the single date/time the installer captured on-site (importApatorWater.class.php).
+     */
+    public function importApatorWaterCsv(int $objectId, string $filePath, string $dateTime): int
+    {
+        $handle = fopen($filePath, 'r');
+
+        if ($handle === false) {
+            return 0;
+        }
+
+        $firstRow = true;
+        $imported = 0;
+
+        while (($line = fgets($handle)) !== false) {
+            $fields = explode(';', $line);
+
+            if (! $firstRow && count($fields) > 10) {
+                $devid = (int) $fields[0];
+                $curVal = (float) str_replace(',', '.', $fields[13]);
+                $prevVal = (float) str_replace(',', '.', $fields[14]);
+                $prevVal2 = (float) str_replace(',', '.', $fields[15]);
+
+                $this->importRadioReading($objectId, $devid, $dateTime, $curVal, $prevVal, $prevVal2);
+                $imported++;
+            }
+
+            $firstRow = false;
+        }
+
+        fclose($handle);
+
+        return $imported;
+    }
+
+    /**
+     * Import a legacy Apator heat-allocator CSV export. The source file repeats
+     * each reading across 4 rows; only the 2nd of every group carries the data
+     * we want (importApatorHeater.class.php).
+     */
+    public function importApatorHeaterCsv(int $objectId, string $filePath): int
+    {
+        $handle = fopen($filePath, 'r');
+
+        if ($handle === false) {
+            return 0;
+        }
+
+        $firstRow = true;
+        $cycle = 1;
+        $imported = 0;
+
+        while (($line = fgets($handle)) !== false) {
+            $fields = explode(';', $line);
+
+            if (! $firstRow && count($fields) === 15) {
+                if ($cycle === 2) {
+                    $devid = (int) str_replace('"', '', $fields[0]);
+                    $rawDate = str_replace('"', '', $fields[7]);
+                    $curVal = (float) str_replace(',', '.', str_replace('"', '', $fields[8]));
+                    $prevVal = (float) str_replace(',', '.', str_replace('"', '', $fields[12]));
+
+                    $this->importRadioReading($objectId, $devid, date('Y-m-d H:i:s', strtotime($rawDate)), $curVal, $prevVal);
+                    $imported++;
+                }
+
+                $cycle++;
+
+                if ($cycle === 5) {
+                    $cycle = 1;
+                }
+            }
+
+            $firstRow = false;
+        }
+
+        fclose($handle);
+
+        return $imported;
+    }
+
+    /**
+     * Import a legacy Siemens heat-meter CSV export (importSiemensREP.class.php).
+     * Tab-delimited, "x x x" marks an absent value, dates can be 2- or 4-digit years.
+     */
+    public function importSiemensCsv(int $objectId, string $filePath): int
+    {
+        $handle = fopen($filePath, 'r');
+
+        if ($handle === false) {
+            return 0;
+        }
+
+        $skippingHeader = true;
+        $headerLinesSeen = 1;
+        $imported = 0;
+
+        while (($line = fgets($handle)) !== false) {
+            $fields = explode("\t", $line);
+
+            if (! $skippingHeader && count($fields) > 10 && trim($fields[2]) !== 'x x x') {
+                $devid = (int) $fields[4];
+                $date = strlen($fields[2]) === 8
+                    ? \DateTime::createFromFormat('d.m.y H:i:s', $fields[2] . ' ' . $fields[3])
+                    : \DateTime::createFromFormat('d.m.Y H:i:s', $fields[2] . ' ' . $fields[3]);
+
+                $statDate = null;
+                if (trim($fields[18]) !== 'x x x') {
+                    $parsed = \DateTime::createFromFormat('d.m.Y', trim($fields[18]));
+                    $statDate = $parsed ? $parsed->format('Y-m-d') : null;
+                }
+
+                $errorCode = null;
+                $errorDate = null;
+                if (trim($fields[8]) !== 'x x x') {
+                    $parsed = \DateTime::createFromFormat('d.m.Y', trim($fields[8]));
+                    $errorDate = $parsed ? $parsed->format('Y-m-d') : null;
+                    $errorCode = (int) $fields[7];
+                }
+
+                $insert = false;
+                $curVal = $prevVal = $prevVal2 = 0.0;
+
+                if (trim($fields[12]) !== 'x x x') {
+                    $curVal = $this->siemensFieldValue($fields[12]);
+                    $prevVal = $this->siemensFieldValue($fields[19]);
+                    $prevVal2 = $this->siemensFieldValue($fields[20]);
+                    $insert = true;
+                } elseif (trim($fields[10]) !== 'x x x' && in_array(trim($fields[11]), ['H.C.A.', 'HCA', 'kWh'], true)) {
+                    $curVal = $this->siemensFieldValue($fields[10]);
+                    $prevVal = $this->siemensFieldValue($fields[19]);
+                    $prevVal2 = $this->siemensFieldValue($fields[20]);
+                    $insert = true;
+                }
+
+                if ($insert && $date !== false) {
+                    $this->importRadioReading($objectId, $devid, $date->format('Y-m-d H:i:s'), $curVal, $prevVal, $prevVal2, $errorCode, $errorDate, $statDate);
+                    $imported++;
+                }
+            }
+
+            $headerLinesSeen++;
+
+            if ($headerLinesSeen > 4 && count($fields) > 10 && trim($fields[0]) !== '') {
+                $skippingHeader = false;
+            }
+        }
+
+        fclose($handle);
+
+        return $imported;
+    }
+
+    private function siemensFieldValue(string $field): float
+    {
+        $field = trim($field);
+
+        if ($field === 'x x x' || $field === '') {
+            return 0.0;
+        }
+
+        return (float) str_replace(',', '.', $field);
+    }
+
+    /**
+     * Shared insert path for the CSV importers above, mirroring
+     * RadioModels::importRadioData()/importRadioDataExt(): scales the raw value
+     * by device type, skips readings older than what's already stored, and
+     * writes both the history log and the "last known value" row.
+     */
+    private function importRadioReading(
+        int $objectId,
+        int $devid,
+        string $dateTime,
+        float $value,
+        ?float $mvalue = null,
+        ?float $prevValue = null,
+        ?int $errorCode = null,
+        ?string $errorDate = null,
+        ?string $statDate = null
+    ): void {
+        if (! $this->hasLegacyDeviceTables($objectId)) {
+            return;
+        }
+
+        $device = DB::table('object_' . $objectId)->where('devid', $devid)->first();
+
+        if ($device === null) {
+            return;
+        }
+
+        $scale = $this->deviceScale((int) $device->devtype);
+
+        $existing = DB::table('lastdata_' . $objectId)->where('devid', $devid)->first();
+
+        if ($existing !== null && strtotime($existing->date) >= strtotime($dateTime)) {
+            return;
+        }
+
+        DB::table('mlog_' . $objectId)->insert([
+            'devid' => $devid,
+            'date' => $dateTime,
+            'value' => $value * $scale,
+        ]);
+
+        $payload = [
+            'date' => $dateTime,
+            'value' => $value * $scale,
+            'inserterd' => now(),
+        ];
+
+        if ($mvalue !== null) {
+            $payload['mvalue'] = $mvalue * $scale;
+        }
+
+        if ($prevValue !== null) {
+            $payload['prevVal'] = $prevValue * $scale;
+        }
+
+        if ($errorCode !== null) {
+            $payload['error'] = $errorCode;
+        }
+
+        if ($errorDate !== null) {
+            $payload['errorDate'] = $errorDate;
+        }
+
+        if ($statDate !== null) {
+            $payload['statDate'] = $statDate;
+        }
+
+        DB::table('lastdata_' . $objectId)->updateOrInsert(['devid' => $devid], $payload);
+    }
+
+    /**
+     * SOE heat-cost allocation, ported from soe.class.php (CreateTMPtable / FillXLS /
+     * FillCSV / AndurValue). Splits a monthly payment between an m2-based share and
+     * a sensor-reading-based share, then distributes each apartment's cost using its
+     * area and its radiators' consumption.
+     */
+    public function calculateSoeCosts(int $objectId, int $month, float $paymentAmount): array
+    {
+        $empty = [
+            'address' => '', 'city' => '', 'month' => $month, 'payment' => $paymentAmount,
+            'm2_cost' => 0.0, 'andur_cost' => 0.0, 'one_m2_price' => 0.0, 'one_pips_price' => 0.0,
+            'flats' => [], 'grand' => ['m2' => 0.0, 'm2_cost' => 0.0, 'sensor_cost' => 0.0, 'total' => 0.0],
+        ];
+
+        if (! Schema::hasTable('object_' . $objectId) || ! Schema::hasTable('heat_' . $objectId) || ! Schema::hasTable('flat_' . $objectId)) {
+            return $empty;
+        }
+
+        $object = DB::table('objects')->where('id', $objectId)->first();
+
+        if ($object === null) {
+            return $empty;
+        }
+
+        $dtype = (int) $object->dtype;
+        $settings = $this->getSoeSettings($objectId);
+        $m2Pct = $settings['m2_source'];
+        $andurPct = 100 - $m2Pct;
+
+        $m2Cost = round($m2Pct * $paymentAmount / 100, 2);
+        $andurCost = round($andurPct * $paymentAmount / 100, 2);
+
+        // Apator allocators are read as an absolute lifetime value (no diffing needed,
+        // so the "previous reading" is always treated as 0); Siemens allocators
+        // report incrementally and need last month's reading subtracted out.
+        $resetPrevVal = $month === 1 || $dtype === 1;
+        $yearShift = $month === 12 ? 12 : 0;
+
+        $devices = DB::table('object_' . $objectId . ' as O')
+            ->leftJoin('heat_' . $objectId . ' as HE', 'O.devid', '=', 'HE.devid')
+            ->leftJoin('lastdata_' . $objectId . ' as L', 'O.devid', '=', 'L.devid')
+            ->where(function ($query): void {
+                $query->where('O.devtype', 3)->orWhereBetween('O.devtype', [30, 39]);
+            })
+            ->select(['O.location', 'O.devid', 'HE.power', 'HE.cof', 'HE.size', 'HE.description', 'L.date', 'L.value', 'L.mvalue', 'L.prevVal'])
+            ->get();
+
+        $deviceRows = [];
+        $totalConsumptionUnits = 0.0;
+
+        foreach ($devices as $device) {
+            $prevVal = $resetPrevVal ? 0.0 : (float) ($device->prevVal ?? 0);
+            $readingMonth = $device->date ? (int) date('n', strtotime($device->date)) : 0;
+            $dataIsCurrentOrNewer = ($readingMonth + $yearShift) > $month;
+
+            if ($dtype === 1) {
+                $min = 0.0;
+                $max = $dataIsCurrentOrNewer ? (float) ($device->mvalue ?? 0) : (float) ($device->value ?? 0);
+            } else {
+                $min = $prevVal;
+                $max = (float) ($device->mvalue ?? 0);
+            }
+
+            $diff = $max - $min;
+            $power = (float) ($device->power ?? 0);
+            $cof = (float) ($device->cof ?? 0);
+            $consumption = $power * $cof * $diff / 1000;
+            $totalConsumptionUnits += $consumption;
+
+            $deviceRows[] = [
+                'location' => (string) $device->location,
+                'devid' => $device->devid,
+                'power' => $power,
+                'cof' => $cof,
+                'min' => $min,
+                'max' => $max,
+                'diff' => $diff,
+                'consumption' => $consumption,
+            ];
+        }
+
+        $onePipsPrice = $totalConsumptionUnits > 0 ? $andurCost / $totalConsumptionUnits : 0.0;
+
+        $flats = DB::table('flat_' . $objectId)->orderBy('id')->get();
+        $totalM2 = (float) DB::table('flat_' . $objectId)->sum('size');
+        $oneM2Price = $totalM2 > 0 ? $m2Cost / $totalM2 : 0.0;
+
+        $result = [];
+        $grand = ['m2' => 0.0, 'm2_cost' => 0.0, 'sensor_cost' => 0.0, 'total' => 0.0];
+
+        foreach ($flats as $flat) {
+            $flatDevices = array_values(array_filter($deviceRows, static fn (array $row): bool => $row['location'] === (string) $flat->location));
+            $m2Value = $flat->size * $oneM2Price;
+            $sensorValue = array_sum(array_map(static fn (array $row): float => $row['consumption'] * $onePipsPrice, $flatDevices));
+            $total = $m2Value + $sensorValue;
+
+            $grand['m2'] += $flat->size;
+            $grand['m2_cost'] += $m2Value;
+            $grand['sensor_cost'] += $sensorValue;
+            $grand['total'] += $total;
+
+            $result[] = [
+                'location' => $flat->location,
+                'size' => $flat->size,
+                'devices' => $flatDevices,
+                'm2_value' => $m2Value,
+                'sensor_value' => $sensorValue,
+                'total' => $total,
+            ];
+        }
+
+        return [
+            'address' => $object->address ?? '',
+            'city' => $object->City ?? '',
+            'month' => $month,
+            'payment' => $paymentAmount,
+            'm2_cost' => $m2Cost,
+            'andur_cost' => $andurCost,
+            'one_m2_price' => $oneM2Price,
+            'one_pips_price' => $onePipsPrice,
+            'flats' => $result,
+            'grand' => $grand,
+        ];
+    }
+
     public function normalizeFilters(array $filters): array
     {
         return [
@@ -829,14 +1261,21 @@ class LegacyObjectsService
             return [];
         }
 
-        $table = $dtype === 3 ? 'object_' . $objectId : 'object_' . $objectId;
-        $lastDataJoin = $dtype === 3 ? 'lastdata_' . $objectId : 'lastdata_' . $objectId;
+        $table = 'object_' . $objectId;
+        $lastDataJoin = 'lastdata_' . $objectId;
+
+        // Multi-tariff columns only exist on lastdata_N tables for objects that had
+        // a multi-tariff electric meter installed - most objects don't have them.
+        $hasTariffColumns = Schema::hasColumn($lastDataJoin, 'tariff_1');
+        $tariffColumns = $hasTariffColumns
+            ? ', L.tariff_1, L.tariff_2, L.tariff_1_mvalue, L.tariff_2_mvalue'
+            : ', NULL as tariff_1, NULL as tariff_2, NULL as tariff_1_mvalue, NULL as tariff_2_mvalue';
 
         try {
             $query = DB::table($table . ' as O')
                 ->leftJoin($lastDataJoin . ' as L', 'O.devid', '=', 'L.devid')
                 ->orderBy('O.id')
-                ->selectRaw('O.devid, O.id, O.location, O.devtype, L.date, L.value, L.mvalue, L.prevVal, L.inserterd, L.error, L.errorDate, L.statDate, L.tariff_1, L.tariff_2, L.tariff_1_mvalue, L.tariff_2_mvalue, if(L.date < DATE_SUB(NOW(), interval 3 DAY) or (L.date is null), 1, 0) as err');
+                ->selectRaw('O.devid, O.id, O.location, O.devtype, L.date, L.value, L.mvalue, L.prevVal, L.inserterd, L.error, L.errorDate, L.statDate, if(L.date < DATE_SUB(NOW(), interval 3 DAY) or (L.date is null), 1, 0) as err' . $tariffColumns);
 
             return $query->get()->map(function ($record): array {
                 $scale = $this->deviceScale((int) $record->devtype);
@@ -943,15 +1382,20 @@ class LegacyObjectsService
         return Schema::hasTable('object_' . $objectId) && Schema::hasTable('lastdata_' . $objectId);
     }
 
+    /**
+     * Matches AllObjPage.class.php's device-type switch exactly: water meters
+     * (1, 2, and their 10-19/20-29 sub-ranges) store raw values scaled by 1000,
+     * heat (3, 31-39) and generic (8) are unscaled, 4/5 by 100, 6 by 10, 7 by 1000.
+     */
     private function deviceScale(int $deviceType): int
     {
         return match (true) {
-            $deviceType === 6 => 10,
-            $deviceType === 4, $deviceType === 5 => 100,
-            $deviceType === 7 => 1000,
-            $deviceType === 1, $deviceType === 2, $deviceType === 8 => 1,
+            $deviceType === 1, $deviceType === 2 => 1000,
             $deviceType >= 10 && $deviceType < 20 => 1000,
             $deviceType >= 20 && $deviceType < 30 => 1000,
+            $deviceType === 4, $deviceType === 5 => 100,
+            $deviceType === 6 => 10,
+            $deviceType === 7 => 1000,
             default => 1,
         };
     }
