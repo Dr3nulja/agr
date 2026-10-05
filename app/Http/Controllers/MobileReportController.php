@@ -34,6 +34,6 @@ class MobileReportController extends Controller
         $report->delete();
         $this->logAction(sprintf('Deleted mobile report #%d (object #%d, apartment %s)', $report->id, $report->object_id, $report->apartment));
 
-        return back()->with('success', 'Отчёт удалён');
+        return back()->with('success', 'Aruanne kustutatud');
     }
 }

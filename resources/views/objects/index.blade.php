@@ -215,6 +215,29 @@
             color: var(--text-muted);
         }
 
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .view-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .view-btn:hover {
+            border-color: var(--primary);
+        }
+
         .action-menu {
             position: relative;
             display: inline-block;
@@ -267,6 +290,7 @@
             gap: 8px;
             padding: 10px 14px;
             color: var(--text-muted);
+            text-decoration: none;
             cursor: pointer;
             border: none;
             background: none;
@@ -515,13 +539,12 @@
                                 </td>
                                 <td class="fw-cell">{{ $object->ver ?? '-' }}</td>
                                 <td>
-                                    <div class="action-menu">
-                                        <button class="menu-btn" onclick="toggleMenu(this)">⋯</button>
-                                        <div class="menu-dropdown">
-                                            <a href="{{ route('objects.show', $object->id) }}" class="menu-item">
-                                                👁️ View
-                                            </a>
-                                            @if(session('user')->role == 1)
+                                    <div class="row-actions">
+                                        <a href="{{ route('objects.show', $object->id) }}" class="view-btn">👁️ View</a>
+                                        @if(session('user')->role == 1)
+                                        <div class="action-menu">
+                                            <button class="menu-btn" onclick="toggleMenu(this)">⋯</button>
+                                            <div class="menu-dropdown">
                                                 <a href="{{ route('objects.edit', $object->id) }}" class="menu-item">
                                                     ✏️ Edit
                                                 </a>
@@ -549,8 +572,9 @@
                                                 <button class="menu-item delete" type="button" onclick="if(confirm('Delete this object?')) { deleteObject({{ $object->id }}) }">
                                                     🗑️ Delete
                                                 </button>
-                                            @endif
+                                            </div>
                                         </div>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

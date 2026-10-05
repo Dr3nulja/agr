@@ -2,45 +2,62 @@
     Форма добавления задачи для мобильного приложения.
     $object  — массив/модель объекта: задача ставится на него (страница объекта)
     $objects — список объектов для выбора с поиском (главная, вкладка «Задачи»)
+
+    Форма — в отдельной тонированной панели с подписями полей, чтобы её не путали
+    с кнопками фильтра над списком (tasks._filter).
 --}}
 @include('tasks._styles')
 
 @if(session('user')->role == 1)
-    <form method="post" action="{{ route('tasks.store') }}" class="task-form">
+    <form method="post" action="{{ route('tasks.store') }}" class="task-form-panel">
         @csrf
+        <div class="task-form-title">➕ Uus ülesanne</div>
 
-        @isset($object)
-            <input type="hidden" name="object_id" value="{{ $object['id'] }}">
-        @else
-            <div class="task-object-picker">
-                <input type="search" class="task-input task-object-search" placeholder="🔍 Поиск объекта: адрес, город, ID" autocomplete="off">
-                <select name="object_id" class="task-input task-object-select" required>
-                    <option value="">— Выберите объект —</option>
-                    @foreach($objects as $item)
-                        <option value="{{ $item->id }}" @selected(old('object_id') == $item->id)>
-                            {{ $item->address }}, {{ $item->City }} (#{{ $item->id }})
-                        </option>
+        <div class="task-form">
+            @isset($object)
+                <input type="hidden" name="object_id" value="{{ $object['id'] }}">
+            @else
+                <label class="task-field task-field-object">
+                    <span class="task-field-label">Objekt</span>
+                    <span class="task-object-picker">
+                        <input type="search" class="task-input task-object-search" placeholder="🔍 Otsi: aadress, linn, ID" autocomplete="off">
+                        <select name="object_id" class="task-input task-object-select" required>
+                            <option value="">— Vali objekt —</option>
+                            @foreach($objects as $item)
+                                <option value="{{ $item->id }}" @selected(old('object_id') == $item->id)>
+                                    {{ $item->address }}, {{ $item->City }} (#{{ $item->id }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </span>
+                </label>
+            @endisset
+
+            <label class="task-field">
+                <span class="task-field-label">Seade</span>
+                <select name="device_type" class="task-input" required>
+                    @foreach(\App\Models\ObjectTask::DEVICE_TYPES as $value => $label)
+                        <option value="{{ $value }}" @selected(old('device_type') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
-            </div>
-        @endisset
+            </label>
 
-        <select name="device_type" class="task-input" required>
-            @foreach(\App\Models\ObjectTask::DEVICE_TYPES as $value => $label)
-                <option value="{{ $value }}" @selected(old('device_type') === $value)>{{ $label }}</option>
-            @endforeach
-        </select>
-        <select name="action_type" class="task-input" required>
-            @foreach(\App\Models\ObjectTask::ACTION_TYPES as $value => $label)
-                <option value="{{ $value }}" @selected(old('action_type') === $value)>{{ $label }}</option>
-            @endforeach
-        </select>
-        <button type="submit" class="btn btn-primary">+ Добавить задачу</button>
+            <label class="task-field">
+                <span class="task-field-label">Toiming</span>
+                <select name="action_type" class="task-input" required>
+                    @foreach(\App\Models\ObjectTask::ACTION_TYPES as $value => $label)
+                        <option value="{{ $value }}" @selected(old('action_type') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
+
+            <button type="submit" class="task-submit">Lisa ülesanne</button>
+        </div>
+
+        @if($errors->any())
+            <div class="task-error">{{ $errors->first() }}</div>
+        @endif
     </form>
-
-    @if($errors->any())
-        <div class="task-error">{{ $errors->first() }}</div>
-    @endif
 @endif
 
 @once

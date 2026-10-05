@@ -20,11 +20,6 @@ class DashboardController extends Controller
         $totalObjects = AgrObject::count();
         $activeObjects = AgrObject::where('status', 1)->count();
         $inactiveObjects = AgrObject::where('status', 2)->count();
-        
-        // Объекты по типам
-        $objectsByType = AgrObject::selectRaw('dtype, COUNT(*) as count')
-                              ->groupBy('dtype')
-                              ->get();
 
         // Задачи для мобильного приложения (вместо последних логов)
         $recentTasks = ObjectTask::with('object')->latest('id')->limit(8)->get();
@@ -37,7 +32,6 @@ class DashboardController extends Controller
             'totalObjects' => $totalObjects,
             'activeObjects' => $activeObjects,
             'inactiveObjects' => $inactiveObjects,
-            'objectsByType' => $objectsByType,
             'recentTasks' => $recentTasks,
             'tasksCount' => ObjectTask::count(),
             'taskObjects' => ObjectTaskController::objectOptions(),

@@ -21,14 +21,14 @@
 @forelse($mobileReports as $report)
     <details class="report">
         <summary>
-            <span class="report-apartment">Кв. {{ $report->apartment ?: '—' }}</span>
+            <span class="report-apartment">Krt {{ $report->apartment ?: '—' }}</span>
             <span class="task-badge task-badge-{{ $report->device_type }}">{{ $report->taskLabel() }}</span>
             <span class="report-meta">QR: {{ $report->qr_id ?: '—' }}</span>
             <span class="report-meta" style="margin-left:auto;">{{ $report->created_at?->format('d.m.Y H:i') }}</span>
         </summary>
         <div class="report-body">
             <div class="report-images">
-                @foreach(['photo_before' => 'Фото до', 'photo_after' => 'Фото после', 'signature' => 'Подпись'] as $file => $label)
+                @foreach(['photo_before' => 'Foto enne', 'photo_after' => 'Foto pärast', 'signature' => 'Allkiri'] as $file => $label)
                     @if($report->{$file})
                         <figure>
                             <a href="{{ route('mobile-reports.file', [$report->id, $file]) }}" target="_blank">
@@ -50,14 +50,14 @@
             </dl>
 
             @if(session('user')->role == 1)
-                <form method="post" action="{{ route('mobile-reports.destroy', $report->id) }}" onsubmit="return confirm('Удалить отчёт?');" style="margin-top:12px;">
+                <form method="post" action="{{ route('mobile-reports.destroy', $report->id) }}" onsubmit="return confirm('Kas kustutada aruanne?');" style="margin-top:12px;">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="task-delete" style="width:auto; padding:0 14px;">✕ Удалить отчёт</button>
+                    <button type="submit" class="task-delete" style="width:auto; padding:0 14px;">✕ Kustuta aruanne</button>
                 </form>
             @endif
         </div>
     </details>
 @empty
-    <div class="task-empty">Отчётов пока нет</div>
+    <div class="task-empty">Aruandeid veel pole</div>
 @endforelse

@@ -8,17 +8,18 @@
 @php($showObject = $showObject ?? false)
 
 @if($tasks->isEmpty())
-    <div class="task-empty">Задач нет</div>
+    <div class="task-empty">Ülesandeid pole</div>
 @else
+    <div class="task-table-wrap">
     <table class="task-table">
         <thead>
             <tr>
                 @if($showObject)
-                    <th>Объект</th>
-                    <th>Город</th>
+                    <th>Objekt</th>
+                    <th>Linn</th>
                 @endif
-                <th>Задача</th>
-                <th>Добавлена</th>
+                <th>Ülesanne</th>
+                <th>Lisatud</th>
                 @if(session('user')->role == 1)
                     <th></th>
                 @endif
@@ -26,7 +27,7 @@
         </thead>
         <tbody>
             @foreach($tasks as $task)
-                <tr class="task-row">
+                <tr class="task-row" data-device="{{ $task->device_type }}" data-action="{{ $task->action_type }}" data-city="{{ $task->object->City ?? '' }}">
                     @if($showObject)
                         <td>
                             @if($task->object)
@@ -41,10 +42,10 @@
                     <td class="task-date">{{ $task->created_at?->format('d.m.Y H:i') }}</td>
                     @if(session('user')->role == 1)
                         <td class="task-actions">
-                            <form method="post" action="{{ route('tasks.destroy', $task->id) }}" onsubmit="return confirm('Удалить задачу?');">
+                            <form method="post" action="{{ route('tasks.destroy', $task->id) }}" onsubmit="return confirm('Kas kustutada ülesanne?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="task-delete" title="Удалить">✕</button>
+                                <button type="submit" class="task-delete" title="Kustuta">✕</button>
                             </form>
                         </td>
                     @endif
@@ -52,4 +53,6 @@
             @endforeach
         </tbody>
     </table>
+    </div>
+    <div class="task-empty task-filter-empty" hidden>Filtrile ei vasta ühtegi ülesannet</div>
 @endif

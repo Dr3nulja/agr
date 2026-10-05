@@ -28,8 +28,12 @@ class ObjectTaskController extends Controller
             'device_type' => ['required', Rule::in(array_keys(ObjectTask::DEVICE_TYPES))],
             'action_type' => ['required', Rule::in(array_keys(ObjectTask::ACTION_TYPES))],
         ], [
-            'object_id.required' => 'Выберите объект',
-            'object_id.exists' => 'Объект не найден',
+            'object_id.required' => 'Vali objekt',
+            'object_id.exists' => 'Objekti ei leitud',
+            'device_type.required' => 'Vali seade',
+            'device_type.in' => 'Vali seade',
+            'action_type.required' => 'Vali toiming',
+            'action_type.in' => 'Vali toiming',
         ]);
 
         $task = ObjectTask::firstOrCreate($validated);
@@ -38,7 +42,7 @@ class ObjectTaskController extends Controller
             $this->logAction(sprintf('Added task "%s" to object #%d', $task->label(), $task->object_id));
         }
 
-        return back()->with('success', 'Задача добавлена');
+        return back()->with('success', 'Ülesanne lisatud');
     }
 
     public function destroy($task)
@@ -47,7 +51,7 @@ class ObjectTaskController extends Controller
         $task->delete();
         $this->logAction(sprintf('Removed task "%s" from object #%d', $task->label(), $task->object_id));
 
-        return back()->with('success', 'Задача удалена');
+        return back()->with('success', 'Ülesanne kustutatud');
     }
 
     /**

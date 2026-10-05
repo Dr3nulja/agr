@@ -42,14 +42,6 @@
         h2 { margin-top: 0; color: var(--text); font-weight: 500; }
         .badge-admin { background: var(--primary-grad); color: white; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; margin-left: 8px; font-weight: 500; }
 
-        .protocol-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-top: 18px; }
-        .protocol-box { padding: 16px 18px; border-radius: 16px; background: var(--bg); }
-        .protocol-head { display: flex; align-items: center; justify-content: space-between; }
-        .protocol-name { font-size: 0.9rem; font-weight: 500; }
-        .protocol-tag { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.68rem; color: var(--text-faint); letter-spacing: 0.04em; }
-        .protocol-count { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 1.5rem; font-weight: 500; margin-top: 10px; }
-        .protocol-bar { height: 5px; border-radius: 3px; background: var(--border); margin-top: 10px; overflow: hidden; }
-        .protocol-bar > div { height: 100%; }
     </style>
 @endsection
 
@@ -87,36 +79,9 @@
     </div>
 
     <div class="card">
-        <h2>🔌 By Protocol</h2>
-        @php
-            $protocolMeta = [
-                1 => ['label' => 'Apator', 'tag' => 'WATER', 'color' => 'oklch(0.62 0.19 254)'],
-                2 => ['label' => 'Siemens', 'tag' => 'HEAT', 'color' => 'oklch(0.7 0.15 65)'],
-                3 => ['label' => 'Elekter', 'tag' => 'ELECTRIC', 'color' => 'oklch(0.68 0.15 155)'],
-                4 => ['label' => 'LoRa', 'tag' => 'ELECTRIC', 'color' => 'oklch(0.62 0.18 305)'],
-            ];
-            $byType = $objectsByType->pluck('count', 'dtype');
-            $maxCount = max(1, $byType->max() ?? 1);
-        @endphp
-        <div class="protocol-grid">
-            @foreach($protocolMeta as $dtype => $meta)
-                @php $count = $byType->get($dtype, 0); @endphp
-                <div class="protocol-box">
-                    <div class="protocol-head">
-                        <div class="protocol-name">{{ $meta['label'] }}</div>
-                        <div class="protocol-tag">{{ $meta['tag'] }}</div>
-                    </div>
-                    <div class="protocol-count">{{ $count }}<span style="font-size:0.8rem; color: var(--text-faint); font-weight:400;"> / {{ $totalObjects }}</span></div>
-                    <div class="protocol-bar"><div style="width: {{ $totalObjects > 0 ? round($count / $totalObjects * 100) : 0 }}%; background: {{ $meta['color'] }};"></div></div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-
-    <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <h2 style="margin-bottom:0;">📋 Задачи для приложения</h2>
-            <a href="{{ route('tasks.index') }}" style="color: var(--primary); text-decoration:none; font-weight:500;">Все задачи ({{ $tasksCount }}) →</a>
+            <h2 style="margin-bottom:0;">📋 Ülesanded rakendusele</h2>
+            <a href="{{ route('tasks.index') }}" style="color: var(--primary); text-decoration:none; font-weight:500;">Kõik ülesanded ({{ $tasksCount }}) →</a>
         </div>
         @include('tasks._form', ['objects' => $taskObjects])
         @include('tasks._list', ['tasks' => $recentTasks, 'showObject' => true])

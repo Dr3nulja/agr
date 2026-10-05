@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Задачи - AGR')
+@section('title', 'Ülesanded - AGR')
 
 @section('extra-styles')
     <style>
@@ -12,39 +12,20 @@
             margin-bottom: 20px;
         }
         h2 { margin-top: 0; color: var(--text); font-weight: 500; }
-        .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
         .hint { color: var(--text-muted); margin-top: -6px; }
     </style>
 @endsection
 
 @section('content')
     <div class="card">
-        <h2>📋 Задачи для приложения</h2>
-        <p class="hint">Монтажники видят эти задачи на первом экране QRScannerApp. Объект без задач в приложении не показывается.</p>
+        <h2>📋 Ülesanded rakendusele</h2>
+        <p class="hint">Paigaldajad näevad neid ülesandeid QRScannerApp'i avaekraanil. Ilma ülesanneteta objekti rakenduses ei kuvata.</p>
         @include('tasks._form', ['objects' => $objects])
     </div>
 
     <div class="card">
-        <div class="card-head">
-            <h2>Текущие задачи ({{ $tasks->count() }})</h2>
-            @if($tasks->isNotEmpty())
-                <input type="search" id="taskFilter" class="task-input" placeholder="🔍 Фильтр" autocomplete="off">
-            @endif
-        </div>
+        <h2>Aktiivsed ülesanded ({{ $tasks->count() }})</h2>
+        @include('tasks._filter', ['tasks' => $tasks])
         @include('tasks._list', ['tasks' => $tasks, 'showObject' => true])
     </div>
-@endsection
-
-@section('extra-scripts')
-    <script>
-        var taskFilter = document.getElementById('taskFilter');
-        if (taskFilter) {
-            taskFilter.addEventListener('input', function () {
-                var query = taskFilter.value.trim().toLowerCase();
-                document.querySelectorAll('.task-row').forEach(function (row) {
-                    row.hidden = row.textContent.toLowerCase().indexOf(query) === -1;
-                });
-            });
-        }
-    </script>
 @endsection

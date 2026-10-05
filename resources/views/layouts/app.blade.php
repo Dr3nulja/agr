@@ -218,7 +218,7 @@
                     Objects
                 </a>
                 <a href="{{ route('tasks.index') }}" class="navbar-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
-                    Задачи
+                    Ülesanded
                 </a>
             </div>
 
