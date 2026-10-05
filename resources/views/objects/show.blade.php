@@ -209,6 +209,21 @@
     @endif
 
     <div class="panel">
+        <h3 class="section-title">📋 Задачи для приложения</h3>
+        <div style="color: var(--text-muted); margin-bottom: 12px;">
+            Монтажники видят эти задачи на первом экране QRScannerApp. Объект без задач в приложении не показывается.
+        </div>
+
+        @include('tasks._list', ['tasks' => $tasks])
+        @include('tasks._form')
+    </div>
+
+    <div class="panel">
+        <h3 class="section-title">📱 Отчёты из приложения ({{ $mobileReports->count() }})</h3>
+        @include('mobile-reports._list')
+    </div>
+
+    <div class="panel">
         <h3 class="section-title">🧾 Object Info</h3>
         <div class="info-grid" style="margin-top: 14px; gap: 16px;">
             <div class="info-box">

@@ -62,6 +62,16 @@ class AgrObject extends Model
         return $this->hasMany(ObjectInstallData::class, 'oid');
     }
 
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(ObjectTask::class, 'object_id');
+    }
+
+    public function mobileReports(): HasMany
+    {
+        return $this->hasMany(MobileReport::class, 'object_id');
+    }
+
     public function csqLogs(): HasMany
     {
         return $this->hasMany(Csq::class, 'object');

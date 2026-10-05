@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\ObjectTaskController;
 use App\Models\AgrObject;
-use App\Models\Log;
+use App\Models\ObjectTask;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -25,8 +26,8 @@ class DashboardController extends Controller
                               ->groupBy('dtype')
                               ->get();
 
-        // Последние логи
-        $recentLogs = Log::orderBy('created_at', 'desc')->limit(10)->get();
+        // Задачи для мобильного приложения (вместо последних логов)
+        $recentTasks = ObjectTask::with('object')->latest('id')->limit(8)->get();
 
         // Объекты без связи (последняя сессия больше суток назад)
         $offlineObjects = AgrObject::where('lastSession', '<', now()->subDay())->count();
@@ -37,7 +38,9 @@ class DashboardController extends Controller
             'activeObjects' => $activeObjects,
             'inactiveObjects' => $inactiveObjects,
             'objectsByType' => $objectsByType,
-            'recentLogs' => $recentLogs,
+            'recentTasks' => $recentTasks,
+            'tasksCount' => ObjectTask::count(),
+            'taskObjects' => ObjectTaskController::objectOptions(),
             'offlineObjects' => $offlineObjects,
         ]);
     }

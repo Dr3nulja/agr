@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'log.action' => App\Http\Middleware\LogAction::class,
             'admin.only' => App\Http\Middleware\AdminOnly::class,
         ]);
+
+        // Мобильное приложение шлёт форму без CSRF-токена
+        $middleware->validateCsrfTokens(except: ['insert_dev_data']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Exception handling will be configured here during the migration.

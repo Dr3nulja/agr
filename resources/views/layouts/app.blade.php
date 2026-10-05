@@ -217,6 +217,9 @@
                 <a href="{{ route('objects.index') }}" class="navbar-link {{ request()->routeIs('objects.*') ? 'active' : '' }}">
                     Objects
                 </a>
+                <a href="{{ route('tasks.index') }}" class="navbar-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
+                    Задачи
+                </a>
             </div>
 
             <div class="navbar-right">

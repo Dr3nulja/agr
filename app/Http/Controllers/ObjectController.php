@@ -167,7 +167,7 @@ class ObjectController extends Controller
      */
     public function show($item, LegacyObjectsService $legacyObjectsService)
     {
-        $item = AgrObject::with('installData', 'csqLogs')->findOrFail($item);
+        $item = AgrObject::with('installData', 'csqLogs', 'tasks')->findOrFail($item);
         $devices = $legacyObjectsService->getDevices((int) $item->id, (int) $item->dtype);
         $errorCounts = $legacyObjectsService->getObjectErrorCounts((int) $item->id);
 
@@ -176,6 +176,8 @@ class ObjectController extends Controller
             'devices' => $devices,
             'installData' => $item->installData->toArray(),
             'csqLogs' => $item->csqLogs->toArray(),
+            'tasks' => $item->tasks->sortBy('id')->values(),
+            'mobileReports' => $item->mobileReports()->latest('id')->get(),
             'legacyErrorCounts' => $errorCounts,
             'commands' => $legacyObjectsService->getCommandOptions((int) $item->dtype),
         ]);
@@ -274,6 +276,7 @@ class ObjectController extends Controller
     {
         $item = AgrObject::findOrFail($item);
         $this->logAction(sprintf('Deleted object #%d (IMEI: %s)', $item->id, $item->IMEI));
+        $item->tasks()->delete();
         $item->delete();
 
         return redirect()->route('objects.index')->with('success', 'Объект удален');

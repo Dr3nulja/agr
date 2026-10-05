@@ -7,6 +7,9 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ObjectsController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\SoeReportController;
+use App\Http\Controllers\ObjectTaskController;
+use App\Http\Controllers\MobileReportController;
+use App\Http\Controllers\Api\MobileAppController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -57,9 +60,23 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::post('/objects/{object}/command', [ObjectsController::class, 'sendCommand'])->name('objects.command')->middleware('admin.only');
     Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show');
     
+    // Задачи для мобильного приложения
+    Route::get('/tasks', [ObjectTaskController::class, 'index'])->name('tasks.index');
+    Route::post('/tasks', [ObjectTaskController::class, 'store'])->name('tasks.store')->middleware('admin.only');
+    Route::delete('/tasks/{task}', [ObjectTaskController::class, 'destroy'])->name('tasks.destroy')->middleware('admin.only');
+
+    // Отчёты из мобильного приложения
+    Route::get('/mobile-reports/{report}/{file}', [MobileReportController::class, 'file'])->name('mobile-reports.file');
+    Route::delete('/mobile-reports/{report}', [MobileReportController::class, 'destroy'])->name('mobile-reports.destroy')->middleware('admin.only');
+
     // Профиль пользователя
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
 });
+
+// ============ МОБИЛЬНОЕ ПРИЛОЖЕНИЕ (QRScannerApp) ============
+// Тот же путь, что на боевом сервере, чтобы приложению менять только адрес
+Route::get('/get_house_list', [MobileAppController::class, 'houseList'])->name('mobile.house_list');
+Route::post('/insert_dev_data', [MobileAppController::class, 'insertDevData'])->name('mobile.insert_dev_data');
 
 // ============ JSON API ============
 Route::prefix('api')->group(function () {

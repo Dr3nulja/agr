@@ -114,26 +114,11 @@
     </div>
 
     <div class="card">
-        <h2>📋 Recent Logs</h2>
-        @if($recentLogs->count() > 0)
-            <table>
-                <thead>
-                    <tr>
-                        <th>Message</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($recentLogs as $log)
-                        <tr>
-                            <td>{{ $log->Content }}</td>
-                            <td>{{ $log->created_at ? $log->created_at->format('M d, H:i') : '' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            <p style="color: var(--text-muted);">No logs yet</p>
-        @endif
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <h2 style="margin-bottom:0;">📋 Задачи для приложения</h2>
+            <a href="{{ route('tasks.index') }}" style="color: var(--primary); text-decoration:none; font-weight:500;">Все задачи ({{ $tasksCount }}) →</a>
+        </div>
+        @include('tasks._form', ['objects' => $taskObjects])
+        @include('tasks._list', ['tasks' => $recentTasks, 'showObject' => true])
     </div>
 @endsection
