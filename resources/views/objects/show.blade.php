@@ -164,7 +164,7 @@
         <div class="info-grid" style="margin-top: 20px; gap: 14px;">
             <div class="info-box">
                 <div class="info-label">Company</div>
-                <div class="info-value">{{ $object['Company'] ?? '—' }}</div>
+                <div class="info-value">{{ ['1' => 'AGR', '2' => 'Prem'][(string) $object['Company']] ?? ($object['Company'] ?? '—') }}</div>
             </div>
             <div class="info-box">
                 <div class="info-label">Status</div>
@@ -259,6 +259,15 @@
                 <div class="info-value">{{ $object['Contact'] ?? '—' }}</div>
             </div>
             <div class="info-box">
+                <div class="info-label">Sum</div>
+                <div class="info-value">{{ $object['summ'] ?? 0 }}</div>
+            </div>
+        </div>
+
+        {{-- Редко нужные поля: по умолчанию скрыты --}}
+        <div id="fullInfoPanel" hidden>
+        <div class="info-grid" style="margin-top: 16px; gap: 16px;">
+            <div class="info-box">
                 <div class="info-label">Packet</div>
                 <div class="info-value">{{ $object['packet'] ?? '—' }}</div>
             </div>
@@ -271,10 +280,15 @@
                 <div class="info-value">{{ $object['callCnt'] ?? 0 }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Sum</div>
-                <div class="info-value">{{ $object['summ'] ?? 0 }}</div>
+                <div class="info-label">CSQ Logs</div>
+                <div class="info-value">{{ count($csqLogs) }}</div>
             </div>
         </div>
+        </div>
+
+        <button type="button" id="fullInfoToggle" class="btn btn-secondary" style="margin-top: 16px; padding: 8px 18px; font-size: 0.85rem;" aria-expanded="false" aria-controls="fullInfoPanel">
+            ▾ Show full info
+        </button>
     </div>
 
     <div class="panel">
@@ -389,10 +403,6 @@
                 <div class="info-label">Install Rows</div>
                 <div class="info-value">{{ count($installData) }}</div>
             </div>
-            <div class="info-box">
-                <div class="info-label">CSQ Logs</div>
-                <div class="info-value">{{ count($csqLogs) }}</div>
-            </div>
         </div>
     </div>
 
@@ -501,6 +511,17 @@
             legacyToggle.addEventListener('click', function () {
                 const isHidden = legacyPanel.style.display === 'none';
                 legacyPanel.style.display = isHidden ? 'block' : 'none';
+            });
+        }
+
+        const fullInfoToggle = document.getElementById('fullInfoToggle');
+        const fullInfoPanel = document.getElementById('fullInfoPanel');
+
+        if (fullInfoToggle && fullInfoPanel) {
+            fullInfoToggle.addEventListener('click', function () {
+                fullInfoPanel.hidden = !fullInfoPanel.hidden;
+                this.setAttribute('aria-expanded', String(!fullInfoPanel.hidden));
+                this.textContent = fullInfoPanel.hidden ? '▾ Show full info' : '▴ Hide full info';
             });
         }
     </script>
