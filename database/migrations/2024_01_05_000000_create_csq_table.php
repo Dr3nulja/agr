@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // На копии боевой базы таблица уже есть (создана старой системой)
+        if (Schema::hasTable('csq')) {
+            return;
+        }
+
         Schema::create('csq', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('object')->index();

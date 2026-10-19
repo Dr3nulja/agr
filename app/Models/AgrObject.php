@@ -9,6 +9,9 @@ class AgrObject extends Model
 {
     protected $table = 'objects';
 
+    // В таблице старой системы нет created_at / updated_at
+    public $timestamps = false;
+
     protected $fillable = [
         'address',
         'City',

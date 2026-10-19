@@ -9,6 +9,9 @@ class ObjectInstallData extends Model
 {
     protected $table = 'objects_install_data';
 
+    // В таблице старой системы нет created_at / updated_at
+    public $timestamps = false;
+
     protected $fillable = [
         'oid',
         'devid',

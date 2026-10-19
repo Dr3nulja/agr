@@ -530,8 +530,6 @@ class LegacyObjectsService
             'lat' => $data['lat'] ?? 0,
             'lon' => $data['lon'] ?? 0,
             'saveHval' => isset($data['saveMVal1']) ? 1 : 0,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return $objectId;
@@ -572,7 +570,6 @@ class LegacyObjectsService
                 'lat' => $data['lat'] ?? 0,
                 'lon' => $data['lon'] ?? 0,
                 'saveHval' => isset($data['saveMVal1']) ? 1 : 0,
-                'updated_at' => now(),
             ]);
     }
 
@@ -593,7 +590,6 @@ class LegacyObjectsService
                 'Description' => $data['description'] ?? '',
                 'lat' => $data['lat'] ?? 0,
                 'lon' => $data['lon'] ?? 0,
-                'updated_at' => now(),
             ]);
     }
 

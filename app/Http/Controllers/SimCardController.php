@@ -80,6 +80,13 @@ class SimCardController extends Controller
         foreach ($rows as $fields) {
             [$number, $iccid, $pin1, $puk1, $pin2, $puk2] = array_pad(array_map(fn ($v) => $v === '' ? null : $v, $fields), 6, null);
 
+            if (mb_strlen((string) $number) > 25 || mb_strlen((string) $iccid) > 25
+                || max(array_map(fn ($v) => mb_strlen((string) $v), [$pin1, $pin2])) > 8
+                || max(array_map(fn ($v) => mb_strlen((string) $v), [$puk1, $puk2])) > 10) {
+                $skipped[] = ($number ?? $iccid) . ' (liiga pikk väärtus)';
+                continue;
+            }
+
             $exists = SimCard::query()
                 ->when($number, fn ($q) => $q->orWhere('number', $number))
                 ->when($iccid, fn ($q) => $q->orWhere('iccid', $iccid))
@@ -180,12 +187,13 @@ class SimCardController extends Controller
     private function validateCard(Request $request, ?SimCard $sim = null): array
     {
         $validated = $request->validate([
-            'number' => ['nullable', 'string', 'max:50', 'required_without:iccid', Rule::unique('sim_cards', 'number')->ignore($sim?->id)],
-            'iccid' => ['nullable', 'string', 'max:50', Rule::unique('sim_cards', 'iccid')->ignore($sim?->id)],
-            'pin1' => 'nullable|string|max:50',
-            'pin2' => 'nullable|string|max:50',
-            'puk1' => 'nullable|string|max:50',
-            'puk2' => 'nullable|string|max:50',
+            // Длины — как колонки objects в боевой базе (туда копируется назначенная SIM)
+            'number' => ['nullable', 'string', 'max:25', 'required_without:iccid', Rule::unique('sim_cards', 'number')->ignore($sim?->id)],
+            'iccid' => ['nullable', 'string', 'max:25', Rule::unique('sim_cards', 'iccid')->ignore($sim?->id)],
+            'pin1' => 'nullable|string|max:8',
+            'pin2' => 'nullable|string|max:8',
+            'puk1' => 'nullable|string|max:10',
+            'puk2' => 'nullable|string|max:10',
             'comment' => 'nullable|string|max:1000',
         ], [
             'number.required_without' => 'Sisesta number või ICCID',
