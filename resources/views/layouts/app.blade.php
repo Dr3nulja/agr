@@ -196,8 +196,9 @@
             }
         }
 
-        @yield('extra-styles')
     </style>
+    {{-- Страницы передают сюда свой <style>; внутри общего <style> первое правило ломалось --}}
+    @yield('extra-styles')
 </head>
 <body>
     <!-- Навигация -->
@@ -219,6 +220,12 @@
                 </a>
                 <a href="{{ route('tasks.index') }}" class="navbar-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
                     Ülesanded
+                </a>
+                <a href="{{ route('installations.index') }}" class="navbar-link {{ request()->routeIs('installations.*') ? 'active' : '' }}">
+                    Paigaldus
+                </a>
+                <a href="{{ route('sims.index') }}" class="navbar-link {{ request()->routeIs('sims.*') ? 'active' : '' }}">
+                    SIM-kaardid
                 </a>
             </div>
 

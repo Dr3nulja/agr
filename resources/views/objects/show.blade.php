@@ -219,7 +219,10 @@
     </div>
 
     <div class="panel">
-        <h3 class="section-title">📱 Aruanded rakendusest ({{ $mobileReports->count() }})</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <h3 class="section-title">📱 Aruanded rakendusest ({{ $mobileReports->count() }})</h3>
+            <a href="{{ route('installations.show', $object['id']) }}" class="btn btn-secondary">🔧 Paigalduse ülevaade, PDF / Excel →</a>
+        </div>
         @include('mobile-reports._list')
     </div>
 
@@ -238,22 +241,21 @@
                 <div class="info-label">IMEI2</div>
                 <div class="info-value">{{ $object['IMEI2'] ?? '—' }}</div>
             </div>
-            <div class="info-box">
-                <div class="info-label">GSMNR</div>
-                <div class="info-value">{{ $object['GSMNR'] ?? '—' }}</div>
-            </div>
-            <div class="info-box">
-                <div class="info-label">GSMNR2</div>
-                <div class="info-value">{{ $object['GSMNR2'] ?? '—' }}</div>
-            </div>
-            <div class="info-box">
-                <div class="info-label">GSMSERIAL</div>
-                <div class="info-value">{{ $object['GSMSERIAL'] ?? '—' }}</div>
-            </div>
-            <div class="info-box">
-                <div class="info-label">GSMSERIAL2</div>
-                <div class="info-value">{{ $object['GSMSERIAL2'] ?? '—' }}</div>
-            </div>
+            @foreach(\App\Models\SimCard::SLOTS as $slot => $slotLabel)
+                <div class="info-box">
+                    <div class="info-label">{{ $slotLabel }}</div>
+                    <div class="info-value">
+                        @if($sim = $simCards->get($slot))
+                            <a href="{{ route('sims.index', ['q' => $sim->number ?: $sim->iccid]) }}" style="color: var(--primary); text-decoration: none;">{{ $sim->number ?: '—' }}</a>
+                            @if($sim->iccid)
+                                <div style="font-size: 0.8rem; color: var(--text-muted); font-family: 'IBM Plex Mono', ui-monospace, monospace;">{{ $sim->iccid }}</div>
+                            @endif
+                        @else
+                            —
+                        @endif
+                    </div>
+                </div>
+            @endforeach
             <div class="info-box">
                 <div class="info-label">Contact</div>
                 <div class="info-value">{{ $object['Contact'] ?? '—' }}</div>

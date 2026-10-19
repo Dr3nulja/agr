@@ -29,7 +29,7 @@
             color: var(--text);
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -147,14 +147,7 @@
                 <div class="field"><label>Contact Person</label><input name="Contact" value="{{ old('Contact', $object['Contact'] ?? '') }}"></div>
                 <div class="field"><label>IMEI *</label><input name="IMEI" value="{{ old('IMEI', $object['IMEI'] ?? '') }}" required></div>
                 <div class="field"><label>IMEI 2</label><input name="IMEI2" value="{{ old('IMEI2', $object['IMEI2'] ?? '') }}"></div>
-                <div class="field"><label>GSM Number</label><input name="GSMNR" value="{{ old('GSMNR', $object['GSMNR'] ?? '') }}"></div>
-                <div class="field"><label>GSM Number 2</label><input name="GSMNR2" value="{{ old('GSMNR2', $object['GSMNR2'] ?? '') }}"></div>
-                <div class="field"><label>GSM Serial</label><input name="GSMSERIAL" value="{{ old('GSMSERIAL', $object['GSMSERIAL'] ?? '') }}"></div>
-                <div class="field"><label>GSM Serial 2</label><input name="GSMSERIAL2" value="{{ old('GSMSERIAL2', $object['GSMSERIAL2'] ?? '') }}"></div>
-                <div class="field"><label>PIN 1</label><input name="pin1" value="{{ old('pin1', $object['pin1'] ?? '') }}"></div>
-                <div class="field"><label>PIN 2</label><input name="pin2" value="{{ old('pin2', $object['pin2'] ?? '') }}"></div>
-                <div class="field"><label>PUK 1</label><input name="puk1" value="{{ old('puk1', $object['puk1'] ?? '') }}"></div>
-                <div class="field"><label>PUK 2</label><input name="puk2" value="{{ old('puk2', $object['puk2'] ?? '') }}"></div>
+                @include('objects._sim-slots')
                 <div class="field"><label>Device Quantity</label><input name="Devqtty" type="number" min="0" value="{{ old('Devqtty', $object['Devqtty'] ?? 0) }}"></div>
                 <div class="field"><label>Radio Device Quantity</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', $object['RadioDevQty'] ?? 0) }}"></div>
                 <div class="field"><label>Main Radio Location</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', $object['MainRadio'] ?? 0) }}"></div>

@@ -13,6 +13,7 @@ class AgrObject extends Model
         'address',
         'City',
         'GSMNR',
+        'GSMNR2',
         'IMEI',
         'IMEI2',
         'Contact',
@@ -70,6 +71,11 @@ class AgrObject extends Model
     public function mobileReports(): HasMany
     {
         return $this->hasMany(MobileReport::class, 'object_id');
+    }
+
+    public function simCards(): HasMany
+    {
+        return $this->hasMany(SimCard::class, 'object_id')->orderBy('slot');
     }
 
     public function csqLogs(): HasMany

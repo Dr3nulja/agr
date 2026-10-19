@@ -19,7 +19,7 @@ class MobileAppController extends Controller
     // Поля, которые лежат отдельными колонками или файлами, а не в `data`
     private const MAIN_FIELDS = [
         'house_id', 'device_type', 'action_type', 'apartment', 'qr_id', 'last_reading',
-        'photo_before', 'photo_after', 'signature',
+        'photo_before', 'photo_after', 'signature', 'installer', 'client_uuid',
     ];
 
     /**
@@ -62,15 +62,32 @@ class MobileAppController extends Controller
             'apartment' => ['nullable', 'string', 'max:50'],
             'qr_id' => ['nullable', 'string', 'max:100'],
             'last_reading' => ['nullable', 'string', 'max:50'],
+            'installer' => ['nullable', 'string', 'max:100'],
+            'client_uuid' => ['nullable', 'string', 'max:64'],
+        ], [
+            // Тексты показываются монтажнику в приложении
+            'house_id.*' => 'Maja ei leitud — värskenda majade nimekirja',
+            'device_type.*' => 'Vali seadme tüüp',
+            'action_type.*' => 'Vali toiming',
+            'apartment.max' => 'Korteri number on liiga pikk',
+            'qr_id.max' => 'QR-kood on liiga pikk',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
         }
 
-        $report = DB::transaction(function () use ($request) {
+        // Повтор той же отправки (ответ потерялся по дороге) — отвечаем как в первый раз
+        $clientUuid = $request->input('client_uuid') ?: null;
+        if ($clientUuid && $existing = MobileReport::where('client_uuid', $clientUuid)->first()) {
+            return response()->json(['status' => 'ok', 'id' => $existing->id, 'duplicate' => true]);
+        }
+
+        $report = DB::transaction(function () use ($request, $clientUuid) {
             $report = MobileReport::create([
                 'object_id' => (int) $request->input('house_id'),
+                'installer' => $request->input('installer') ?: null,
+                'client_uuid' => $clientUuid,
                 'device_type' => $request->input('device_type'),
                 'action_type' => $request->input('action_type'),
                 'apartment' => $request->input('apartment'),

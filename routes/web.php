@@ -9,6 +9,8 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\SoeReportController;
 use App\Http\Controllers\ObjectTaskController;
 use App\Http\Controllers\MobileReportController;
+use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\SimCardController;
 use App\Http\Controllers\Api\MobileAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +66,24 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::get('/tasks', [ObjectTaskController::class, 'index'])->name('tasks.index');
     Route::post('/tasks', [ObjectTaskController::class, 'store'])->name('tasks.store')->middleware('admin.only');
     Route::delete('/tasks/{task}', [ObjectTaskController::class, 'destroy'])->name('tasks.destroy')->middleware('admin.only');
+
+    // Paigaldus: ход монтажа по объектам, отчёты из приложения, экспорт
+    Route::get('/installations', [InstallationController::class, 'index'])->name('installations.index');
+    Route::get('/installations/{object}', [InstallationController::class, 'show'])->name('installations.show');
+    Route::get('/installations/{object}/print', [InstallationController::class, 'print'])->name('installations.print');
+    Route::get('/installations/{object}/export.xlsx', [InstallationController::class, 'xlsx'])->name('installations.xlsx');
+
+    // Регистр SIM-карт
+    Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');
+    Route::middleware('admin.only')->group(function () {
+        Route::post('/sims', [SimCardController::class, 'store'])->name('sims.store');
+        Route::post('/sims/bulk', [SimCardController::class, 'storeBulk'])->name('sims.store-bulk');
+        Route::put('/sims/{sim}', [SimCardController::class, 'update'])->name('sims.update');
+        Route::post('/sims/{sim}/issue', [SimCardController::class, 'issue'])->name('sims.issue');
+        Route::post('/sims/{sim}/release', [SimCardController::class, 'release'])->name('sims.release');
+        Route::post('/sims/{sim}/assign', [SimCardController::class, 'assign'])->name('sims.assign');
+        Route::delete('/sims/{sim}', [SimCardController::class, 'destroy'])->name('sims.destroy');
+    });
 
     // Отчёты из мобильного приложения
     Route::get('/mobile-reports/{report}/{file}', [MobileReportController::class, 'file'])->name('mobile-reports.file');

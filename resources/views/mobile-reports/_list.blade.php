@@ -24,6 +24,9 @@
             <span class="report-apartment">Krt {{ $report->apartment ?: '—' }}</span>
             <span class="task-badge task-badge-{{ $report->device_type }}">{{ $report->taskLabel() }}</span>
             <span class="report-meta">QR: {{ $report->qr_id ?: '—' }}</span>
+            @if($report->installer)
+                <span class="report-meta">👷 {{ $report->installer }}</span>
+            @endif
             <span class="report-meta" style="margin-left:auto;">{{ $report->created_at?->format('d.m.Y H:i') }}</span>
         </summary>
         <div class="report-body">
@@ -41,11 +44,8 @@
             </div>
 
             <dl class="report-data">
-                @if($report->last_reading)
-                    <div><dt>last_reading</dt><dd>{{ $report->last_reading }}</dd></div>
-                @endif
-                @foreach($report->filledData() as $key => $value)
-                    <div><dt>{{ $key }}</dt><dd>{{ $value }}</dd></div>
+                @foreach($report->fields() as [$label, $value])
+                    <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
                 @endforeach
             </dl>
 
