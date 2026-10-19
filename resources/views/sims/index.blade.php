@@ -17,6 +17,7 @@
         .sim-stat { display: flex; flex-direction: column; gap: 2px; min-width: 120px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-decoration: none; }
         .sim-stat:hover { border-color: var(--primary); }
         .sim-stat.is-active { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+        .sim-stat-warn { background: oklch(0.97 0.04 75); border-color: oklch(0.85 0.09 70); }
         .sim-stat-value { font-size: 1.5rem; font-weight: 600; }
         .sim-stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -84,6 +85,13 @@
                     <span class="sim-stat-label">{{ $label }}</span>
                 </a>
             @endforeach
+            @if($conflicts > 0)
+                <a href="{{ route('sims.index', ['q' => \App\Models\SimCard::CONFLICT_NOTE]) }}" class="sim-stat sim-stat-warn {{ $search === \App\Models\SimCard::CONFLICT_NOTE ? 'is-active' : '' }}"
+                   title="Sama number või ICCID oli kirjas mitmel objektil. SIM määrati objektile, mis viimati ühendust võttis — kontrolli, kas see on õige.">
+                    <span class="sim-stat-value">{{ $conflicts }}</span>
+                    <span class="sim-stat-label">Kontrollida</span>
+                </a>
+            @endif
         </div>
 
         <form method="get" action="{{ route('sims.index') }}" class="sim-search">

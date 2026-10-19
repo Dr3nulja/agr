@@ -40,9 +40,11 @@ return new class extends Migration
     }
 
     /**
-     * Переносим уже записанные в объектах карты. Если один номер/ICCID стоит
-     * на нескольких объектах, карта назначается первому, остальные пропускаются —
-     * их колонки в objects не трогаем, разобраться можно вручную.
+     * Переносим уже записанные в объектах карты. Один номер/ICCID бывает записан
+     * на нескольких объектах (SIM переставили, старую запись не почистили — в дампе
+     * таких 13). Карта достаётся объекту, где она скорее всего стоит сейчас:
+     * активному и позже всех выходившему на связь. Остальные объекты указываются
+     * в комментарии карты; их колонки в objects не трогаем.
      */
     private function importFromObjects(): void
     {
@@ -51,6 +53,9 @@ return new class extends Migration
         $now = now();
 
         $objects = DB::table('objects')
+            ->orderByRaw('status = 1 DESC')
+            ->orderByRaw('lastSession IS NULL')
+            ->orderByDesc('lastSession')
             ->orderBy('id')
             ->get(['id', 'GSMNR', 'GSMSERIAL', 'GSMNR2', 'GSMSERIAL2', 'pin1', 'pin2', 'puk1', 'puk2']);
 
@@ -61,17 +66,22 @@ return new class extends Migration
             ];
 
             foreach ($slots as $slot => [$number, $iccid, $pin1, $pin2, $puk1, $puk2]) {
-                $number = $this->clean($number);
-                $iccid = $this->clean($iccid);
+                $number = $this->cleanId($number);
+                $iccid = $this->cleanId($iccid);
 
                 if ($number === null && $iccid === null) {
                     continue;
                 }
-                if (($number !== null && isset($seenNumbers[$number])) || ($iccid !== null && isset($seenIccids[$iccid]))) {
+                $ownerSimId = ($number !== null ? ($seenNumbers[mb_strtolower($number)] ?? null) : null)
+                    ?? ($iccid !== null ? ($seenIccids[mb_strtolower($iccid)] ?? null) : null);
+                if ($ownerSimId) {
+                    DB::table('sim_cards')->where('id', $ownerSimId)->update([
+                        'comment' => DB::raw("CONCAT_WS('; ', comment, " . DB::getPdo()->quote(sprintf('Sama SIM oli kirjas ka objektil #%d', $object->id)) . ')'),
+                    ]);
                     continue;
                 }
 
-                DB::table('sim_cards')->insert([
+                $simId = DB::table('sim_cards')->insertGetId([
                     'number' => $number,
                     'iccid' => $iccid,
                     'pin1' => $this->clean($pin1),
@@ -87,13 +97,22 @@ return new class extends Migration
                 ]);
 
                 if ($number !== null) {
-                    $seenNumbers[$number] = true;
+                    $seenNumbers[mb_strtolower($number)] = $simId;
                 }
                 if ($iccid !== null) {
-                    $seenIccids[$iccid] = true;
+                    $seenIccids[mb_strtolower($iccid)] = $simId;
                 }
             }
         }
+    }
+
+    /**
+     * Номер / ICCID: без пробелов и невидимых символов (в дампе есть номера,
+     * вставленные с U+202A/U+202C — для MySQL они равны «чистым», для PHP нет)
+     */
+    private function cleanId(?string $value): ?string
+    {
+        return $this->clean(preg_replace('/[\p{Cf}\s]+/u', '', (string) $value));
     }
 
     private function clean(?string $value): ?string

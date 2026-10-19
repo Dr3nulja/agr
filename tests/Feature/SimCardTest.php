@@ -61,6 +61,25 @@ class SimCardTest extends TestCase
         $this->assertSame(SimCard::STATUS_ASSIGNED, $slot1->status);
         $this->assertSame('+3725002', SimCard::where('object_id', $first->id)->where('slot', 2)->value('number'));
         $this->assertFalse(SimCard::where('object_id', $duplicate->id)->exists());
+        $this->assertStringContainsString('#' . $duplicate->id, $slot1->comment);
+    }
+
+    public function test_migration_gives_duplicate_sim_to_object_that_reported_last(): void
+    {
+        $migration = require database_path('migrations/2026_10_19_000000_create_sim_cards_table.php');
+        $migration->down();
+
+        $stale = $this->object('110000000000001', ['GSMNR' => "\u{202A}+3725009\u{202C}", 'lastSession' => now()->subMonth()]);
+        $current = $this->object('110000000000002', ['GSMNR' => '+3725009', 'lastSession' => now()]);
+
+        $migration->up();
+
+        $sim = SimCard::sole();
+        $this->assertSame('+3725009', $sim->number); // без невидимых символов из копипаста
+        $this->assertSame($current->id, $sim->object_id);
+        $this->assertSame(SimCard::CONFLICT_NOTE . ' #' . $stale->id, $sim->comment);
+
+        $this->withSession($this->admin())->get('/sims')->assertOk()->assertSee('Kontrollida');
     }
 
     public function test_assigned_sim_can_only_be_released_not_moved(): void

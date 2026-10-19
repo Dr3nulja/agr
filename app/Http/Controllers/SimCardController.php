@@ -44,6 +44,8 @@ class SimCardController extends Controller
         return view('sims.index', [
             'sims' => $query->orderBy('number')->paginate(50)->withQueryString(),
             'counts' => SimCard::query()->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status'),
+            // Номер был записан на нескольких объектах — миграция выбрала один, стоит проверить
+            'conflicts' => SimCard::where('comment', 'like', SimCard::CONFLICT_NOTE . '%')->count(),
             'status' => $status,
             'search' => $search,
             'objects' => ObjectTaskController::objectOptions(),
@@ -79,6 +81,8 @@ class SimCardController extends Controller
 
         foreach ($rows as $fields) {
             [$number, $iccid, $pin1, $puk1, $pin2, $puk2] = array_pad(array_map(fn ($v) => $v === '' ? null : $v, $fields), 6, null);
+            $number = $number !== null ? (preg_replace('/[\p{Cf}\s]+/u', '', $number) ?: null) : null;
+            $iccid = $iccid !== null ? (preg_replace('/[\p{Cf}\s]+/u', '', $iccid) ?: null) : null;
 
             if (mb_strlen((string) $number) > 25 || mb_strlen((string) $iccid) > 25
                 || max(array_map(fn ($v) => mb_strlen((string) $v), [$pin1, $pin2])) > 8
@@ -200,6 +204,13 @@ class SimCardController extends Controller
             'number.unique' => 'Selle numbriga SIM on juba registris',
             'iccid.unique' => 'Selle ICCID-ga SIM on juba registris',
         ]);
+
+        // Номер и ICCID — без пробелов и невидимых символов из копипаста
+        foreach (['number', 'iccid'] as $key) {
+            if (isset($validated[$key])) {
+                $validated[$key] = preg_replace('/[\p{Cf}\s]+/u', '', $validated[$key]);
+            }
+        }
 
         return array_map(fn ($value) => is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value, $validated);
     }

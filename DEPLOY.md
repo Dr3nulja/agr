@@ -19,16 +19,10 @@ mysql -e "CREATE DATABASE agrBase CHARACTER SET utf8mb4"
 mysql agrBase < dump.sql
 ```
 
-**Хранимые процедуры.** В дампе от 07.07.2026 их нет (снят без `--routines`).
-Без `NewObject` / `NewElekterObject` / `CheckObject` у нового объекта не создаются
-его таблицы (`object_N`, `lastdata_N`, `flat_N`, ...). Снять со старого сервера и залить:
-
-```bash
-# на старом сервере
-mysqldump --no-data --no-create-info --skip-triggers --routines agrBase > routines.sql
-# на новом
-mysql agrBase < routines.sql
-```
+Хранимые процедуры старой системы (`NewObject`, `NewElekterObject`, `CheckObject`)
+не нужны: в дампе их нет, и таблицы нового объекта (`object_N`, `lastdata_N`, `mlog_N`,
+`flat_N`, `heat_N` + триггер `ins_data_N`) сайт создаёт сам — по схеме последних
+объектов старой базы. Если процедуры в базе всё же есть, сайт вызывает их.
 
 ## 2. Файлы
 
@@ -48,8 +42,9 @@ chown -R www-data:www-data storage bootstrap/cache
 - базовые таблицы (`users`, `objects`, `log`, ...) не трогает — они уже есть;
 - создаёт `object_tasks`, `mobile_reports`, `sim_cards`;
 - переносит SIM из `objects` в регистр `sim_cards`. Если один номер/ICCID записан
-  на нескольких объектах (в дампе таких 13), карта достаётся первому объекту,
-  остальные остаются только в старых колонках — их надо разобрать вручную;
+  на нескольких объектах (в дампе таких 13), карта достаётся активному объекту,
+  который позже всех выходил на связь. Такие карты видны в регистре под
+  «Kontrollida» — проверить можно когда угодно, развёртыванию это не мешает;
 - расширяет `objects.pin1/pin2` до 8 символов и `users.pass` до 255
   (при входе пароль переводится с MD5 на bcrypt). Только расширение, данные не меняются.
 
@@ -84,4 +79,8 @@ HTTPS: `certbot --nginx -d <домен>`.
   `/api/device-id(s)`. Пока домен смотрит на старый сервер, данные идут туда.
 - Фото и подписи из приложения лежат в `storage/app/mobile_reports` —
   бэкапить вместе с базой.
+- Триггер `ins_data_N` у нового объекта создаётся от пользователя базы из `.env`.
+  Если на MySQL 8 включён binlog, а у пользователя нет SUPER, нужно один раз
+  `SET GLOBAL log_bin_trust_function_creators = 1;` (или в `my.cnf`). Без этого объект
+  всё равно создаётся, но в логе будет предупреждение «Trigger ins_data_N was not created».
 - Ошибки: `storage/logs/laravel.log`, `/var/log/nginx/error.log`.

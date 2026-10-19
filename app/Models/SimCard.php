@@ -25,6 +25,9 @@ class SimCard extends Model
 
     public const SLOTS = [1 => 'SIM 1', 2 => 'SIM 2'];
 
+    // Комментарий, который миграция переноса ставит картам, записанным на нескольких объектах
+    public const CONFLICT_NOTE = 'Sama SIM oli kirjas ka objektil';
+
     protected $table = 'sim_cards';
 
     protected $fillable = [

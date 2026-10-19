@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AgrObject;
 use App\Models\SimCard;
 use App\Services\Legacy\LegacyObjectsService;
+use App\Services\Legacy\ObjectTablesProvisioner;
 use App\Services\SimCardService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -178,18 +179,13 @@ class ObjectController extends Controller
     }
 
     /**
-     * Legacy provisions the object_N/lastdata_N/mlog_N/flat_N/heat_N tables for a
-     * new object via a MySQL stored procedure (NewObject / NewElekterObject for
-     * dtype=3). It only exists on the production server, not on every dev DB, so
-     * a missing routine here is a config issue to fix rather than something that
-     * should break object creation.
+     * Таблицы объекта: процедурой NewObject / NewElekterObject, если она есть в базе,
+     * иначе сами (ObjectTablesProvisioner). Ошибка не должна ломать создание объекта.
      */
     private function provisionObjectTables(int $objectId, int $dtype): void
     {
-        $procedure = $dtype === 3 ? 'NewElekterObject' : 'NewObject';
-
         try {
-            DB::statement("CALL {$procedure}(?)", [$objectId]);
+            app(ObjectTablesProvisioner::class)->provision($objectId, $dtype);
         } catch (QueryException $e) {
             report($e);
         }
@@ -290,10 +286,13 @@ class ObjectController extends Controller
     {
         $item = AgrObject::findOrFail($item);
 
-        try {
-            DB::statement('CALL CheckObject(?)', [$item->id]);
-        } catch (QueryException $e) {
-            report($e);
+        // Процедура старой системы; в дампе её нет — тогда только отмечаем selDate
+        if (app(ObjectTablesProvisioner::class)->procedureExists('CheckObject')) {
+            try {
+                DB::statement('CALL CheckObject(?)', [$item->id]);
+            } catch (QueryException $e) {
+                report($e);
+            }
         }
 
         $item->selDate = now();
