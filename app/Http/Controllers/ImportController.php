@@ -30,7 +30,7 @@ class ImportController extends Controller
         $dateTime = date('Y-m-d H:i:00', strtotime($data['dtime']));
         $imported = $legacyObjectsService->importApatorWaterCsv($objectId, $request->file('fileToUpload')->getRealPath(), $dateTime);
 
-        return redirect()->route('objects.show', $objectId)->with('success', "Imported {$imported} readings");
+        return redirect()->route('objects.show', $objectId)->with('success', "Imporditud {$imported} näitu");
     }
 
     public function apatorHeater(int $objectId, Request $request, LegacyObjectsService $legacyObjectsService): RedirectResponse
@@ -41,7 +41,7 @@ class ImportController extends Controller
 
         $imported = $legacyObjectsService->importApatorHeaterCsv($objectId, $request->file('fileToUpload')->getRealPath());
 
-        return redirect()->route('objects.show', $objectId)->with('success', "Imported {$imported} readings");
+        return redirect()->route('objects.show', $objectId)->with('success', "Imporditud {$imported} näitu");
     }
 
     public function siemens(int $objectId, Request $request, LegacyObjectsService $legacyObjectsService): RedirectResponse
@@ -52,6 +52,6 @@ class ImportController extends Controller
 
         $imported = $legacyObjectsService->importSiemensCsv($objectId, $request->file('fileToUpload')->getRealPath());
 
-        return redirect()->route('objects.show', $objectId)->with('success', "Imported {$imported} readings");
+        return redirect()->route('objects.show', $objectId)->with('success', "Imporditud {$imported} näitu");
     }
 }

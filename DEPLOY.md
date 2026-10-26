@@ -47,6 +47,15 @@ chown -R www-data:www-data storage bootstrap/cache
   «Kontrollida» — проверить можно когда угодно, развёртыванию это не мешает;
 - расширяет `objects.pin1/pin2` до 8 символов и `users.pass` до 255
   (при входе пароль переводится с MD5 на bcrypt). Только расширение, данные не меняются.
+- добавляет в `objects` колонки `water_checked_at`, `heat_checked_at` (два чека: вода / тепло)
+  и `report_emails` (куда слать отчёты); создаёт `reading_corrections` (журнал ручных правок
+  показаний) и `monthly_readings` (зафиксированные месячные показания).
+
+Почта для кнопки «Saada»: `MAIL_*` в `.env` (SMTP). Пока `MAIL_MAILER=log`, письма не уходят,
+а пишутся в `storage/logs/laravel.log`.
+
+Логотипы в отчётах: `public/img/logo-agr.png` и `public/img/logo-prem.png` (по колонке `Company`).
+Если файла нет — отчёт строится без логотипа.
 
 Пользователи и пароли — из старой базы, вход тем же логином/паролем.
 

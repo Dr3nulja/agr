@@ -16,6 +16,9 @@ use Illuminate\View\View;
  */
 class SimCardController extends Controller
 {
+    // Ровно один номер: цифры, можно с «+» в начале
+    private const NUMBER_PATTERN = '/^\+?\d{5,15}$/';
+
     public function __construct(private SimCardService $sims)
     {
     }
@@ -84,6 +87,11 @@ class SimCardController extends Controller
             $number = $number !== null ? (preg_replace('/[\p{Cf}\s]+/u', '', $number) ?: null) : null;
             $iccid = $iccid !== null ? (preg_replace('/[\p{Cf}\s]+/u', '', $iccid) ?: null) : null;
 
+            if ($number !== null && ! preg_match(self::NUMBER_PATTERN, $number)) {
+                $skipped[] = $number . ' (vigane number)';
+                continue;
+            }
+
             if (mb_strlen((string) $number) > 25 || mb_strlen((string) $iccid) > 25
                 || max(array_map(fn ($v) => mb_strlen((string) $v), [$pin1, $pin2])) > 8
                 || max(array_map(fn ($v) => mb_strlen((string) $v), [$puk1, $puk2])) > 10) {
@@ -91,10 +99,8 @@ class SimCardController extends Controller
                 continue;
             }
 
-            $exists = SimCard::query()
-                ->when($number, fn ($q) => $q->orWhere('number', $number))
-                ->when($iccid, fn ($q) => $q->orWhere('iccid', $iccid))
-                ->exists();
+            $exists = ($number && SimCard::findByNumber($number))
+                || ($iccid && SimCard::where('iccid', $iccid)->exists());
 
             if ($exists) {
                 $skipped[] = $number ?? $iccid;
@@ -162,14 +168,15 @@ class SimCardController extends Controller
         $validated = $request->validate([
             'object_id' => ['required', 'integer', Rule::exists('objects', 'id')],
             'slot' => ['required', Rule::in(array_keys(SimCard::SLOTS))],
+            'installer' => ['nullable', 'string', 'max:100'],
         ], [
             'object_id.required' => 'Vali objekt',
             'object_id.exists' => 'Objekti ei leitud',
         ]);
 
         $object = AgrObject::findOrFail($validated['object_id']);
-        $this->sims->assign($sim, $object, (int) $validated['slot']);
-        $this->logAction(sprintf('Assigned SIM %s to object #%d slot %d', $sim->label(), $object->id, $sim->slot));
+        $this->sims->assign($sim, $object, (int) $validated['slot'], trim((string) ($validated['installer'] ?? '')) ?: null);
+        $this->logAction(sprintf('Assigned SIM %s to object #%d slot %d%s', $sim->label(), $object->id, $sim->slot, $sim->issued_to ? ' (installer: ' . $sim->issued_to . ')' : ''));
 
         return back()->with('success', sprintf('SIM määratud: %s', $object->address));
     }
@@ -190,9 +197,24 @@ class SimCardController extends Controller
 
     private function validateCard(Request $request, ?SimCard $sim = null): array
     {
+        // Номер и ICCID — без пробелов и невидимых символов из копипаста
+        foreach (['number', 'iccid'] as $key) {
+            if (is_string($request->input($key))) {
+                $request->merge([$key => preg_replace('/[\p{Cf}\s]+/u', '', $request->input($key))]);
+            }
+        }
+
         $validated = $request->validate([
             // Длины — как колонки objects в боевой базе (туда копируется назначенная SIM)
-            'number' => ['nullable', 'string', 'max:25', 'required_without:iccid', Rule::unique('sim_cards', 'number')->ignore($sim?->id)],
+            'number' => [
+                'nullable', 'string', 'max:25', 'required_without:iccid', 'regex:' . self::NUMBER_PATTERN,
+                Rule::unique('sim_cards', 'number')->ignore($sim?->id),
+                function ($attribute, $value, $fail) use ($sim) {
+                    if ($other = SimCard::findByNumber($value, $sim?->id)) {
+                        $fail('See number on registris juba kujul ' . $other->number);
+                    }
+                },
+            ],
             'iccid' => ['nullable', 'string', 'max:25', Rule::unique('sim_cards', 'iccid')->ignore($sim?->id)],
             'pin1' => 'nullable|string|max:8',
             'pin2' => 'nullable|string|max:8',
@@ -201,16 +223,10 @@ class SimCardController extends Controller
             'comment' => 'nullable|string|max:1000',
         ], [
             'number.required_without' => 'Sisesta number või ICCID',
+            'number.regex' => 'Sisesta üks telefoninumber: ainult numbrid, võib alata „+“-ga',
             'number.unique' => 'Selle numbriga SIM on juba registris',
             'iccid.unique' => 'Selle ICCID-ga SIM on juba registris',
         ]);
-
-        // Номер и ICCID — без пробелов и невидимых символов из копипаста
-        foreach (['number', 'iccid'] as $key) {
-            if (isset($validated[$key])) {
-                $validated[$key] = preg_replace('/[\p{Cf}\s]+/u', '', $validated[$key]);
-            }
-        }
 
         return array_map(fn ($value) => is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value, $validated);
     }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'SOE Settings - AGR')
+@section('title', 'SOE seaded - AGR')
 
 @section('extra-styles')
     <style>
@@ -29,7 +29,7 @@
 
 @section('content')
     <div class="card">
-        <h2>⚙️ SOE settings</h2>
+        <h2>⚙️ SOE seaded</h2>
         <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
 
         @if ($errors->any())
@@ -40,71 +40,71 @@
             @csrf
             <div class="grid">
                 <div class="field span-2">
-                    <label>Cost distribution</label>
+                    <label>Kulude jaotus</label>
                     <div class="toggle">
-                        <label><input type="radio" name="m2_source" value="50" {{ (int) old('m2_source', $settings['m2_source']) === 50 ? 'checked' : '' }}> 50% m2 / 50% sensor</label>
-                        <label><input type="radio" name="m2_source" value="100" {{ (int) old('m2_source', $settings['m2_source']) === 100 ? 'checked' : '' }}> sensor only</label>
-                        <label><input type="radio" name="m2_source" value="0" {{ (int) old('m2_source', $settings['m2_source']) === 0 ? 'checked' : '' }}> m2 only</label>
+                        <label><input type="radio" name="m2_source" value="50" {{ (int) old('m2_source', $settings['m2_source']) === 50 ? 'checked' : '' }}> 50% m2 / 50% jaoturid</label>
+                        <label><input type="radio" name="m2_source" value="100" {{ (int) old('m2_source', $settings['m2_source']) === 100 ? 'checked' : '' }}> ainult jaoturid</label>
+                        <label><input type="radio" name="m2_source" value="0" {{ (int) old('m2_source', $settings['m2_source']) === 0 ? 'checked' : '' }}> ainult m2</label>
                     </div>
                 </div>
 
-                <div class="field"><label for="kuludm2">m2 cost</label><input id="kuludm2" name="kuludm2" type="number" min="0" value="{{ old('kuludm2', $settings['kuludm2']) }}"></div>
-                <div class="field"><label for="lisamaks">Extra fee</label><input id="lisamaks" name="lisamaks" type="number" step="0.01" value="{{ old('lisamaks', $settings['lisamaks']) }}"></div>
+                <div class="field"><label for="kuludm2">m2 kulu</label><input id="kuludm2" name="kuludm2" type="number" min="0" value="{{ old('kuludm2', $settings['kuludm2']) }}"></div>
+                <div class="field"><label for="lisamaks">Lisatasu</label><input id="lisamaks" name="lisamaks" type="number" step="0.01" value="{{ old('lisamaks', $settings['lisamaks']) }}"></div>
 
                 <div class="field span-2">
-                    <label>Options</label>
+                    <label>Valikud</label>
                     <div class="toggle">
-                        <label><input type="checkbox" name="lisamaksen" {{ old('lisamaksen', $settings['lisamaksen']) ? 'checked' : '' }}> Add fee</label>
-                        <label><input type="checkbox" name="eraldileht" {{ old('eraldileht', $settings['eraldileht']) ? 'checked' : '' }}> Separate sheet</label>
-                        <label><input type="checkbox" name="ParamKulu" {{ old('ParamKulu', $settings['ParamKulu']) ? 'checked' : '' }}> Parameter cost</label>
-                        <label><input type="checkbox" name="AlgLopp" {{ old('AlgLopp', $settings['AlgLopp']) ? 'checked' : '' }}> Start/end mode</label>
+                        <label><input type="checkbox" name="lisamaksen" {{ old('lisamaksen', $settings['lisamaksen']) ? 'checked' : '' }}> Lisa lisatasu</label>
+                        <label><input type="checkbox" name="eraldileht" {{ old('eraldileht', $settings['eraldileht']) ? 'checked' : '' }}> Eraldi leht</label>
+                        <label><input type="checkbox" name="ParamKulu" {{ old('ParamKulu', $settings['ParamKulu']) ? 'checked' : '' }}> Parameetri kulu</label>
+                        <label><input type="checkbox" name="AlgLopp" {{ old('AlgLopp', $settings['AlgLopp']) ? 'checked' : '' }}> Algus-/lõppnäidu režiim</label>
                     </div>
                 </div>
 
-                <div class="field"><label>Command</label>
+                <div class="field"><label>Käsk</label>
                     <select name="command">
-                        <option value="0">No command</option>
-                        <option value="1">Restart</option>
-                        <option value="2">Reload devices list</option>
-                        <option value="3">Send data from memory</option>
+                        <option value="0">Käsku pole</option>
+                        <option value="1">Taaskäivita</option>
+                        <option value="2">Laadi seadmete nimekiri uuesti</option>
+                        <option value="3">Saada andmed mälust</option>
                     </select>
                 </div>
             </div>
 
             <div class="actions">
-                <button class="btn" type="submit">Save</button>
-                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Cancel</a>
+                <button class="btn" type="submit">Salvesta</button>
+                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Tühista</a>
             </div>
         </form>
     </div>
 
     <div class="card">
-        <h2>🧮 Calculate Costs</h2>
-        <p class="meta">Split this month's payment between apartments by area and radiator sensor readings.</p>
+        <h2>🧮 Kulude arvutus</h2>
+        <p class="meta">Jagab kuu makse korterite vahel pindala ja jaoturite näitude järgi.</p>
         <form method="get" action="{{ route('objects.soe.report.xlsx', $object['id']) }}" id="soeCalcForm" style="display:flex; gap:16px; align-items:end; flex-wrap:wrap; margin-top:16px;">
             <div class="field">
-                <label for="maks">Payment amount</label>
+                <label for="maks">Makse summa</label>
                 <input id="maks" name="maks" type="number" step="0.01" min="0" required>
             </div>
             <div class="field">
-                <label for="kuu">Month</label>
+                <label for="kuu">Kuu</label>
                 <select id="kuu" name="kuu" required>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
+                    <option value="1">Jaanuar</option>
+                    <option value="2">Veebruar</option>
+                    <option value="3">Märts</option>
+                    <option value="4">Aprill</option>
+                    <option value="5">Mai</option>
+                    <option value="6">Juuni</option>
+                    <option value="7">Juuli</option>
                     <option value="8">August</option>
                     <option value="9">September</option>
-                    <option value="10">October</option>
+                    <option value="10">Oktoober</option>
                     <option value="11">November</option>
-                    <option value="12">December</option>
+                    <option value="12">Detsember</option>
                 </select>
             </div>
-            <button class="btn" type="submit">Calculate (XLSX)</button>
-            <button class="btn btn-secondary" type="submit" formaction="{{ route('objects.soe.report.csv', $object['id']) }}">Calculate (CSV)</button>
+            <button class="btn" type="submit">Arvuta (XLSX)</button>
+            <button class="btn btn-secondary" type="submit" formaction="{{ route('objects.soe.report.csv', $object['id']) }}">Arvuta (CSV)</button>
         </form>
     </div>
 @endsection

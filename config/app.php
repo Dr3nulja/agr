@@ -6,7 +6,7 @@ return [
     'debug' => (bool) env('APP_DEBUG', true),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => 'UTC',
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'et'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
     'key' => env('APP_KEY'),

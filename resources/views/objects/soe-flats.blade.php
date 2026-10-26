@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'SOE Flats - AGR')
+@section('title', 'SOE korterid - AGR')
 
 @section('extra-styles')
     <style>
@@ -33,55 +33,55 @@
 
 @section('content')
     <div class="card">
-        <h2>🏢 SOE flats</h2>
+        <h2>🏢 SOE korterid</h2>
         <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
         <div class="actions">
-            <a class="btn" href="{{ route('objects.soe', $object['id']) }}">SOE settings</a>
-            <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Back</a>
+            <a class="btn" href="{{ route('objects.soe', $object['id']) }}">SOE seaded</a>
+            <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Tagasi</a>
         </div>
     </div>
 
     <div class="grid-2">
         <div class="card">
-            <h3>Upload flat list</h3>
+            <h3>Laadi korterite nimekiri</h3>
             <form method="post" action="{{ route('objects.soe.flats.upload', $object['id']) }}" enctype="multipart/form-data" class="upload">
                 @csrf
                 <input type="file" name="fileToUpload" required>
-                <button class="btn" type="submit">Upload</button>
+                <button class="btn" type="submit">Laadi üles</button>
             </form>
-            <h3 style="margin-top:24px;">Add flat</h3>
+            <h3 style="margin-top:24px;">Lisa korter</h3>
             <form method="post" action="{{ route('objects.soe.flats.store', $object['id']) }}" class="mini">
                 @csrf
                 <div>
-                    <label for="location"><strong>Apartment</strong></label>
+                    <label for="location"><strong>Korter</strong></label>
                     <input id="location" type="text" name="location" required>
                 </div>
                 <div>
-                    <label for="size"><strong>Area</strong></label>
+                    <label for="size"><strong>Pindala</strong></label>
                     <input id="size" type="number" name="size" step="0.01" min="0" required>
                 </div>
-                <button class="btn" type="submit">Add</button>
+                <button class="btn" type="submit">Lisa</button>
             </form>
         </div>
 
         <div class="card table-wrap">
-            <h3>Flats</h3>
+            <h3>Korterid</h3>
             <div class="summary">
                 <div class="stat">
-                    <span>Flats</span>
+                    <span>Korterid</span>
                     <strong>{{ $summary['flat_count'] }}</strong>
                 </div>
                 <div class="stat">
-                    <span>Total area</span>
+                    <span>Pindala kokku</span>
                     <strong>{{ $summary['total_area'] }}</strong>
                 </div>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Apartment</th>
-                        <th>Area</th>
-                        <th>Actions</th>
+                        <th>Korter</th>
+                        <th>Pindala</th>
+                        <th>Toimingud</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,19 +92,19 @@
                                     @csrf
                                     <input type="text" name="location" value="{{ $flat['location'] }}" required>
                                     <input type="number" name="size" step="0.01" min="0" value="{{ $flat['size'] }}" required>
-                                    <button class="btn" type="submit">Save</button>
+                                    <button class="btn" type="submit">Salvesta</button>
                                 </form>
                             </td>
                             <td>
                                 <form method="post" action="{{ route('objects.soe.flats.delete', [$object['id'], $flat['id']]) }}" style="margin:0;">
                                     @csrf
                                     @method('delete')
-                                    <button class="btn btn-danger" type="submit">Delete</button>
+                                    <button class="btn btn-danger" type="submit">Kustuta</button>
                                 </form>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="3">No flats loaded.</td></tr>
+                        <tr><td colspan="3">Kortereid pole lisatud.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -112,16 +112,16 @@
     </div>
 
     <div class="card table-wrap">
-        <h3>Radiators</h3>
+        <h3>Radiaatorid</h3>
         <form method="post" action="{{ route('objects.soe.radiators.upload', $object['id']) }}" enctype="multipart/form-data" class="upload" style="max-width: 420px; margin-bottom: 20px;">
             @csrf
             <input type="file" name="fileToUpload" required>
-            <button class="btn" type="submit">Upload radiator/sensor list</button>
+            <button class="btn" type="submit">Laadi radiaatorite/jaoturite nimekiri</button>
         </form>
         <form method="get" action="{{ route('objects.soe.flats', $object['id']) }}" style="margin-bottom:16px; max-width: 320px;">
-            <label for="flat"><strong>Filter by apartment</strong></label>
+            <label for="flat"><strong>Filtreeri korteri järgi</strong></label>
             <select id="flat" name="flat" onchange="this.form.submit()">
-                <option value="">All apartments</option>
+                <option value="">Kõik korterid</option>
                 @foreach ($flats as $flat)
                     <option value="{{ $flat['location'] }}" @selected($selectedFlat === (string) $flat['location'])>{{ $flat['location'] }}</option>
                 @endforeach
@@ -131,12 +131,12 @@
             @forelse ($flatRadiatorSummary as $row)
                 <div class="stat">
                     <span>{{ $row['flat_name'] }}</span>
-                    <strong>{{ $row['radiator_count'] }} radiators</strong>
-                    <small>Power: {{ $row['total_power'] }}, size: {{ $row['total_size'] }}</small>
+                    <strong>{{ $row['radiator_count'] }} radiaatorit</strong>
+                    <small>Võimsus: {{ $row['total_power'] }}, suurus: {{ $row['total_size'] }}</small>
                 </div>
             @empty
                 <div class="stat">
-                    <span>No radiator summary</span>
+                    <span>Radiaatoreid pole</span>
                     <strong>0</strong>
                 </div>
             @endforelse
@@ -144,12 +144,12 @@
         <table>
             <thead>
                 <tr>
-                    <th>Apartment</th>
-                    <th>Device</th>
-                    <th>Power</th>
-                    <th>Coeff</th>
-                    <th>Size</th>
-                    <th>Description</th>
+                    <th>Korter</th>
+                    <th>Seade</th>
+                    <th>Võimsus</th>
+                    <th>Koef.</th>
+                    <th>Suurus</th>
+                    <th>Kirjeldus</th>
                 </tr>
             </thead>
             <tbody>
@@ -163,7 +163,7 @@
                         <td>{{ $radiator['description'] }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">No radiators found.</td></tr>
+                    <tr><td colspan="6">Radiaatoreid ei leitud.</td></tr>
                 @endforelse
             </tbody>
         </table>

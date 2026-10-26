@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Import CSV - AGR')
+@section('title', 'CSV import - AGR')
 
 @section('extra-styles')
     <style>
@@ -21,44 +21,44 @@
     <p class="meta" style="margin-bottom: 16px;">{{ $object['address'] }} / {{ $object['city'] }}</p>
 
     <div class="card">
-        <h3>💧 Import Apator Water CSV</h3>
+        <h3>💧 Apatori veemõõtjate CSV import</h3>
         <form method="post" action="{{ route('objects.import-csv.apator-water', $object['id']) }}" enctype="multipart/form-data">
             @csrf
             <div class="field">
-                <label for="dtime">Date and time</label>
+                <label for="dtime">Kuupäev ja kellaaeg</label>
                 <input type="datetime-local" id="dtime" name="dtime" required>
             </div>
             <div class="field">
-                <label for="apatorWaterFile">Apator WATER CSV file</label>
+                <label for="apatorWaterFile">Apatori VEE CSV-fail</label>
                 <input type="file" id="apatorWaterFile" name="fileToUpload" required>
             </div>
-            <div class="actions"><button class="btn" type="submit">Upload</button></div>
+            <div class="actions"><button class="btn" type="submit">Laadi üles</button></div>
         </form>
     </div>
 
     <div class="card">
-        <h3>🔥 Import Apator Allocator CSV</h3>
+        <h3>🔥 Apatori jaoturite CSV import</h3>
         <form method="post" action="{{ route('objects.import-csv.apator-heater', $object['id']) }}" enctype="multipart/form-data">
             @csrf
             <div class="field">
-                <label for="apatorHeaterFile">Apator ALLOCATOR CSV file</label>
+                <label for="apatorHeaterFile">Apatori JAOTURITE CSV-fail</label>
                 <input type="file" id="apatorHeaterFile" name="fileToUpload" required>
             </div>
-            <div class="actions"><button class="btn" type="submit">Upload</button></div>
+            <div class="actions"><button class="btn" type="submit">Laadi üles</button></div>
         </form>
     </div>
 
     <div class="card">
-        <h3>⚙️ Import Siemens CSV</h3>
+        <h3>⚙️ Siemensi CSV import</h3>
         <form method="post" action="{{ route('objects.import-csv.siemens', $object['id']) }}" enctype="multipart/form-data">
             @csrf
             <div class="field">
-                <label for="siemensFile">SIEMENS CSV file</label>
+                <label for="siemensFile">SIEMENSI CSV-fail</label>
                 <input type="file" id="siemensFile" name="fileToUpload" required>
             </div>
-            <div class="actions"><button class="btn" type="submit">Upload</button></div>
+            <div class="actions"><button class="btn" type="submit">Laadi üles</button></div>
         </form>
     </div>
 
-    <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">← Back</a>
+    <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">← Tagasi</a>
 @endsection

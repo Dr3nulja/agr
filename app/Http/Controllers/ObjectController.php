@@ -6,11 +6,16 @@ use App\Models\AgrObject;
 use App\Models\SimCard;
 use App\Services\Legacy\LegacyObjectsService;
 use App\Services\Legacy\ObjectTablesProvisioner;
+use App\Mail\ObjectReportMail;
+use App\Services\ObjectCheckService;
+use App\Services\ReportBuilder;
 use App\Services\SimCardService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class ObjectController extends Controller
 {
@@ -21,9 +26,22 @@ class ObjectController extends Controller
     {
         $query = AgrObject::query();
 
-        // Фильтрация по компании / установщику
+        // Фильтрация по компании / установщику (AGR и Prem — одна группа)
         if ($request->input('company') !== null && $request->company !== '') {
-            $query->where('Company', $request->company);
+            if ($request->company === 'agr') {
+                $query->whereIn('Company', AgrObject::COMPANY_GROUP);
+            } else {
+                $query->where('Company', $request->company);
+            }
+        }
+
+        // Фильтрация по менеджеру: IRA / KAT / REG / NAT, можно несколько
+        $managers = array_values(array_intersect(
+            array_map('intval', (array) $request->input('manager', [])),
+            array_keys(AgrObject::MANAGERS)
+        ));
+        if ($managers !== []) {
+            $query->whereIn('manager', $managers);
         }
 
         // Фильтрация по типу системы
@@ -41,8 +59,10 @@ class ObjectController extends Controller
         if ($request->input('checked') !== null && $request->checked !== '') {
             if ($request->checked === 'checked') {
                 $query->whereNotNull('selDate');
+            } elseif ($request->checked === 'water') {
+                $query->whereNull('selDate')->whereNotNull('water_checked_at');
             } elseif ($request->checked === 'unchecked') {
-                $query->whereNull('selDate');
+                $query->whereNull('selDate')->whereNull('water_checked_at');
             }
         }
 
@@ -68,14 +88,19 @@ class ObjectController extends Controller
             ->select('Company')
             ->distinct()
             ->orderBy('Company')
-            ->pluck('Company');
+            ->pluck('Company')
+            ->filter()
+            ->mapWithKeys(fn ($company) => in_array((int) $company, AgrObject::COMPANY_GROUP, true)
+                ? ['agr' => AgrObject::companyDisplayName($company)]
+                : [(string) $company => AgrObject::companyDisplayName($company)]);
 
         $summary = [
             'total' => AgrObject::where('status', '>', 0)->count(),
             'active' => AgrObject::where('status', 1)->count(),
             'inactive' => AgrObject::where('status', 2)->count(),
             'checked' => AgrObject::whereNotNull('selDate')->count(),
-            'unchecked' => AgrObject::whereNull('selDate')->count(),
+            'water' => AgrObject::whereNull('selDate')->whereNotNull('water_checked_at')->count(),
+            'unchecked' => AgrObject::whereNull('selDate')->whereNull('water_checked_at')->count(),
         ];
 
         return view('objects.index', [
@@ -125,6 +150,7 @@ class ObjectController extends Controller
             'lon' => 'nullable|numeric',
             'saveHval' => 'nullable|boolean',
             'status' => 'nullable|integer',
+            'report_emails' => self::reportEmailsRules(),
         ] + self::simSlotRules());
 
         $validated['Company'] = $validated['Company'] ?? 1;
@@ -134,6 +160,7 @@ class ObjectController extends Controller
         $validated['manager'] = $validated['manager'] ?? session('user')->id ?? 1;
         $validated['saveHval'] = $request->has('saveHval');
         $validated['status'] = $validated['status'] ?? 1;
+        $validated['report_emails'] = self::normalizeEmails($validated['report_emails'] ?? null);
 
         $object = DB::transaction(function () use ($validated, $simCardService) {
             $object = AgrObject::create(collect($validated)->except(['sim1_id', 'sim2_id'])->all());
@@ -144,7 +171,7 @@ class ObjectController extends Controller
         $this->provisionObjectTables($object->id, (int) $object->dtype);
         $this->logAction(sprintf('Created object #%d (IMEI: %s)', $object->id, $object->IMEI));
 
-        return redirect()->route('objects.index')->with('success', 'Объект создан успешно');
+        return redirect()->route('objects.index')->with('success', 'Objekt lisatud');
     }
 
     /**
@@ -164,6 +191,27 @@ class ObjectController extends Controller
             'sim1_id' => ['nullable', 'integer', 'different:sim2_id', $selectable],
             'sim2_id' => ['nullable', 'integer', $selectable],
         ];
+    }
+
+    /**
+     * Email для отчётов: можно несколько через запятую, каждый проверяем
+     */
+    private static function reportEmailsRules(): array
+    {
+        return ['nullable', 'string', 'max:500', function ($attribute, $value, $fail) {
+            foreach (AgrObject::parseEmails($value) as $email) {
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    $fail('Vigane e-posti aadress: ' . $email);
+
+                    return;
+                }
+            }
+        }];
+    }
+
+    private static function normalizeEmails(?string $emails): ?string
+    {
+        return implode(', ', AgrObject::parseEmails($emails)) ?: null;
     }
 
     private function applySimSlots(AgrObject $object, array $validated, SimCardService $simCardService): void
@@ -194,7 +242,7 @@ class ObjectController extends Controller
     /**
      * Просмотр объекта
      */
-    public function show($item, LegacyObjectsService $legacyObjectsService)
+    public function show($item, LegacyObjectsService $legacyObjectsService, ObjectCheckService $checks)
     {
         $item = AgrObject::with('installData', 'csqLogs', 'tasks', 'simCards')->findOrFail($item);
         $devices = $legacyObjectsService->getDevices((int) $item->id, (int) $item->dtype);
@@ -210,6 +258,9 @@ class ObjectController extends Controller
             'mobileReports' => $item->mobileReports()->latest('id')->get(),
             'legacyErrorCounts' => $errorCounts,
             'commands' => $legacyObjectsService->getCommandOptions((int) $item->dtype),
+            'model' => $item,
+            'nextCheck' => $checks->nextStep($item),
+            'nextCheckIsFinal' => $checks->nextIsFinal($item),
         ]);
     }
 
@@ -262,6 +313,7 @@ class ObjectController extends Controller
             'lat' => 'nullable|numeric',
             'lon' => 'nullable|numeric',
             'saveHval' => 'nullable|boolean',
+            'report_emails' => self::reportEmailsRules(),
         ] + self::simSlotRules($item));
 
         $validated['Company'] = $validated['Company'] ?? $item->Company;
@@ -269,6 +321,7 @@ class ObjectController extends Controller
         $validated['RadioDevQty'] = $validated['RadioDevQty'] ?? $item->RadioDevQty;
         $validated['MainRadio'] = $validated['MainRadio'] ?? $item->MainRadio;
         $validated['saveHval'] = $request->has('saveHval');
+        $validated['report_emails'] = self::normalizeEmails($validated['report_emails'] ?? null);
 
         DB::transaction(function () use ($item, $validated, $simCardService) {
             $item->update(collect($validated)->except(['sim1_id', 'sim2_id'])->all());
@@ -276,30 +329,91 @@ class ObjectController extends Controller
         });
         $this->logAction(sprintf('Updated object #%d (IMEI: %s)', $item->id, $item->IMEI));
 
-        return redirect()->route('objects.show', $item)->with('success', 'Объект обновлен');
+        return redirect()->route('objects.show', $item)->with('success', 'Objekt salvestatud');
     }
 
     /**
-     * Отметить объект как checked
+     * Поставить следующий чек: вода → тепло (или сразу «сдано всё»)
      */
-    public function check($item)
+    public function check($item, ObjectCheckService $checks)
     {
         $item = AgrObject::findOrFail($item);
+        $step = $checks->check($item);
 
-        // Процедура старой системы; в дампе её нет — тогда только отмечаем selDate
-        if (app(ObjectTablesProvisioner::class)->procedureExists('CheckObject')) {
-            try {
-                DB::statement('CALL CheckObject(?)', [$item->id]);
-            } catch (QueryException $e) {
-                report($e);
-            }
+        if ($step === null) {
+            return back()->with('error', 'Kõik andmed on juba esitatud');
         }
 
-        $item->selDate = now();
-        $item->save();
-        $this->logAction(sprintf('Checked object #%d (IMEI: %s)', $item->id, $item->IMEI));
+        $this->logAction(sprintf('Checked object #%d (IMEI: %s): %s', $item->id, $item->IMEI, $step));
 
-        return redirect()->route('objects.index')->with('success', 'Объект помечен как checked');
+        return redirect()->route('objects.show', $item)->with('success', self::checkMessage($item));
+    }
+
+    /**
+     * Снять чеки
+     */
+    public function uncheck($item, ObjectCheckService $checks)
+    {
+        $item = AgrObject::findOrFail($item);
+        $checks->reset($item);
+        $this->logAction(sprintf('Unchecked object #%d (IMEI: %s)', $item->id, $item->IMEI));
+
+        return redirect()->route('objects.show', $item)->with('success', 'Märked eemaldatud');
+    }
+
+    /**
+     * Отправить отчёт следующего шага на report_emails объекта и поставить чек
+     */
+    public function sendReport($item, ObjectCheckService $checks, ReportBuilder $reports)
+    {
+        $item = AgrObject::findOrFail($item);
+        $emails = $item->reportEmails();
+
+        if ($emails === []) {
+            return back()->with('error', 'Objektil pole aruannete e-posti aadressi — lisa see objekti muutmise vormis');
+        }
+
+        $step = $checks->nextStep($item);
+        if ($step === null) {
+            return back()->with('error', 'Kõik andmed on juba esitatud');
+        }
+
+        [$spreadsheet, $title, $fileName] = $step === ObjectCheckService::STEP_HEAT
+            ? [$reports->allocator($item), 'Jaoturite näidud', 'Report_Alokator_']
+            : [$reports->water($item), 'Veemõõtjate näidud', 'Report_Water_'];
+
+        if ($spreadsheet === null) {
+            return back()->with('error', 'Objekti seadmete tabelid puuduvad — aruannet ei saa koostada');
+        }
+
+        $path = $reports->saveTemp($spreadsheet);
+        try {
+            Mail::to($emails)->send(new ObjectReportMail(
+                $item,
+                $title,
+                $path,
+                $fileName . ReportBuilder::fileSafe($item->address . ' ' . $item->City) . '.xlsx'
+            ));
+        } catch (TransportExceptionInterface $e) {
+            report($e);
+
+            return back()->with('error', 'Kirja saatmine ebaõnnestus: ' . $e->getMessage());
+        } finally {
+            @unlink($path);
+        }
+
+        $checks->check($item);
+        $this->logAction(sprintf('Sent %s report of object #%d to %s', $step, $item->id, implode(', ', $emails)));
+
+        return redirect()->route('objects.show', $item)
+            ->with('success', sprintf('Aruanne saadetud: %s. %s', implode(', ', $emails), self::checkMessage($item)));
+    }
+
+    private static function checkMessage(AgrObject $item): string
+    {
+        return $item->checkState() === AgrObject::CHECK_ALL
+            ? 'Kõik andmed esitatud ✓'
+            : 'Vesi esitatud, soojus veel ootab';
     }
 
     /**
@@ -313,7 +427,7 @@ class ObjectController extends Controller
         $item->tasks()->delete();
         $item->delete();
 
-        return redirect()->route('objects.index')->with('success', 'Объект удален');
+        return redirect()->route('objects.index')->with('success', 'Objekt kustutatud');
     }
 
     /**

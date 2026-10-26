@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Sisselogimine - AGR</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap">
     <style>
         :root {
-            --panel: #f8fafc;
             --text: oklch(0.24 0.02 270);
             --muted: oklch(0.5 0.02 270);
             --accent: oklch(0.62 0.19 254);
@@ -27,64 +26,25 @@
                 linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%);
             color: var(--text);
         }
-        .shell {
-            width: min(960px, calc(100vw - 32px));
-            display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 24px;
-            align-items: stretch;
-        }
-        .hero,
         .form-card {
+            width: min(380px, calc(100vw - 32px));
+            padding: 32px 28px 28px;
             border-radius: 28px;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.65);
             box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
         }
-        .hero {
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 520px;
-        }
         .badge {
-            display: inline-flex;
+            display: block;
             width: fit-content;
-            padding: 8px 14px;
+            margin: 0 auto 24px;
+            padding: 8px 18px;
             border-radius: 999px;
             background: oklch(0.62 0.19 270 / 0.12);
             color: var(--accent);
-            font-weight: 500;
-        }
-        h1 {
-            margin: 18px 0 12px;
-            font-size: clamp(2rem, 4.4vw, 3.6rem);
-            line-height: 1.18;
-            letter-spacing: -0.02em;
-        }
-        .hero p {
-            margin: 0;
-            max-width: 42ch;
-            color: var(--muted);
-            font-size: 1.02rem;
-            line-height: 1.7;
-        }
-        .steps {
-            display: grid;
-            gap: 12px;
-            margin-top: 28px;
-        }
-        .step {
-            padding: 16px 18px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.68);
-            border: 1px solid var(--line);
-            color: var(--text);
-        }
-        .form-card {
-            padding: 28px;
+            font-weight: 600;
+            font-size: 1.1rem;
         }
         .field {
             display: grid;
@@ -107,6 +67,7 @@
         }
         button {
             width: 100%;
+            margin-top: 4px;
             border: 0;
             border-radius: 16px;
             padding: 14px 16px;
@@ -128,54 +89,33 @@
             background: rgba(185, 28, 28, 0.08);
             color: var(--danger);
         }
-        @media (max-width: 860px) {
-            .shell { grid-template-columns: 1fr; }
-            .hero { min-height: auto; }
-        }
     </style>
 </head>
 <body>
-    <main class="shell">
-        <section class="hero">
-            <div>
-                <div class="badge">AGR</div>
-                <h1>Metering & billing, in one place.</h1>
-                <p>
-                    Sign in to manage objects, devices, and meter readings for water,
-                    heat, and electricity accounting.
-                </p>
+    <main class="form-card">
+        <div class="badge">AGR</div>
+
+        <form method="post" action="{{ route('login.store') }}">
+            @csrf
+
+            @if ($errors->any())
+                <div class="errors">
+                    {{ $errors->first() }}
+                </div>
+            @endif
+
+            <div class="field">
+                <label for="login">Kasutajanimi</label>
+                <input id="login" name="login" value="{{ old('login') }}" autocomplete="username" required autofocus>
             </div>
 
-            <div class="steps">
-                <div class="step">💧 Water & heat meter readings</div>
-                <div class="step">⚡ Electricity monitoring</div>
-                <div class="step">📊 Exports, SOE settings & device management</div>
+            <div class="field">
+                <label for="password">Parool</label>
+                <input id="password" type="password" name="password" autocomplete="current-password" required>
             </div>
-        </section>
 
-        <section class="form-card">
-            <form method="post" action="{{ route('login.store') }}">
-                @csrf
-
-                @if ($errors->any())
-                    <div class="errors">
-                        {{ $errors->first() }}
-                    </div>
-                @endif
-
-                <div class="field">
-                    <label for="login">Login</label>
-                    <input id="login" name="login" value="{{ old('login') }}" autocomplete="username" required>
-                </div>
-
-                <div class="field">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password" autocomplete="current-password" required>
-                </div>
-
-                <button type="submit">Sign in</button>
-            </form>
-        </section>
+            <button type="submit">Logi sisse</button>
+        </form>
     </main>
 </body>
 </html>

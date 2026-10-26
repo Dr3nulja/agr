@@ -1284,6 +1284,7 @@ class LegacyObjectsService
                     'devtype' => $deviceType,
                     'devtype_class' => $this->deviceClass((int) $record->devtype),
                     'date' => $record->date ? date('H:i:s d.m.Y', strtotime($record->date)) : '',
+                    'timestamp' => $record->date ? strtotime($record->date) : 0,
                     'value' => isset($record->value) ? $record->value / $scale : 0,
                     'mvalue' => isset($record->mvalue) ? $record->mvalue / $scale : 0,
                     'prev_mvalue' => isset($record->prevVal) ? $record->prevVal / $scale : 0,
@@ -1383,7 +1384,7 @@ class LegacyObjectsService
      * (1, 2, and their 10-19/20-29 sub-ranges) store raw values scaled by 1000,
      * heat (3, 31-39) and generic (8) are unscaled, 4/5 by 100, 6 by 10, 7 by 1000.
      */
-    private function deviceScale(int $deviceType): int
+    public function deviceScale(int $deviceType): int
     {
         return match (true) {
             $deviceType === 1, $deviceType === 2 => 1000,

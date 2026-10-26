@@ -61,6 +61,35 @@ class SimCard extends Model
     }
 
     /**
+     * Ключ для сравнения номеров: +37259123456, 0037259123456, 37259123456 и 59123456 — один номер
+     */
+    public static function numberKey(?string $number): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+        $digits = preg_replace('/^00/', '', $digits);
+
+        return strlen($digits) > 8 && str_starts_with($digits, '372') ? substr($digits, 3) : $digits;
+    }
+
+    /**
+     * Карта с тем же номером в другом написании (кроме $exceptId)
+     */
+    public static function findByNumber(string $number, ?int $exceptId = null): ?self
+    {
+        $key = self::numberKey($number);
+
+        if ($key === '') {
+            return null;
+        }
+
+        return self::query()
+            ->where('number', 'like', '%' . $key)
+            ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
+            ->get()
+            ->first(fn (self $sim) => self::numberKey($sim->number) === $key);
+    }
+
+    /**
      * Номер для списков: «+37259123456 (8937201…)»
      */
     public function label(): string

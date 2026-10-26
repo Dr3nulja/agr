@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Upload Device List - AGR')
+@section('title', 'Seadmete nimekiri - AGR')
 
 @section('extra-styles')
     <style>
@@ -19,22 +19,22 @@
 
 @section('content')
     <div class="card">
-        <h2>📤 Upload device list</h2>
+        <h2>📤 Seadmete nimekirja üleslaadimine</h2>
         <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
 
         <form method="post" action="{{ route('objects.devices.upload.store', $object['id']) }}" enctype="multipart/form-data">
             @csrf
             <div class="field">
-                <label for="fileToUpload">Choose semicolon-separated file</label>
+                <label for="fileToUpload">Vali semikooloniga eraldatud fail</label>
                 <input type="file" id="fileToUpload" name="fileToUpload" required>
             </div>
 
             <div class="actions">
-                <button class="btn" type="submit">Upload</button>
-                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Cancel</a>
+                <button class="btn" type="submit">Laadi üles</button>
+                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Tühista</a>
             </div>
 
-            <p class="hint">Replaces the full device list for this object. Format: id;devid;location;type (one per line).</p>
+            <p class="hint">Asendab objekti kogu seadmete nimekirja. Vorming: id;devid;asukoht;tüüp (üks rida seadme kohta).</p>
         </form>
     </div>
 @endsection

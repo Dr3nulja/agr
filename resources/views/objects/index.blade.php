@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Objects - AGR')
+@section('title', 'Objektid - AGR')
 
 @section('extra-styles')
     <style>
@@ -71,10 +71,42 @@
             border-color: var(--border);
         }
 
-        .status-pill.is-checked {
+        /* Два чека: вода сдана — синий, сдано всё — зелёный */
+        .status-pill.is-water {
             background: oklch(0.94 0.05 240);
             color: oklch(0.42 0.13 254);
             border-color: oklch(0.75 0.1 254);
+        }
+
+        .status-pill.is-checked {
+            background: oklch(0.94 0.06 155);
+            color: oklch(0.4 0.12 155);
+            border-color: oklch(0.78 0.1 155);
+        }
+
+        .manager-filter {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+        }
+
+        .manager-filter label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .manager-filter label:has(input:checked) {
+            background: oklch(0.94 0.05 254);
+            color: oklch(0.42 0.13 254);
         }
 
         .status-pill.is-unchecked {
@@ -142,6 +174,10 @@
 
         tbody tr.selected-row.inactive-row {
             background: #fcd38c;
+        }
+
+        tbody tr.water-row {
+            background: #e0ecff;
         }
 
         td {
@@ -422,21 +458,22 @@
 @section('content')
     <div class="header-section">
         <div>
-            <h2>🏠 Objects Management</h2>
-            <p style="color: var(--text-muted); margin-top: 4px;">Showing {{ $objects->count() }} of {{ $objects->total() }} objects</p>
+            <h2>🏠 Objektid</h2>
+            <p style="color: var(--text-muted); margin-top: 4px;">Näidatakse {{ $objects->count() }} / {{ $objects->total() }} objekti</p>
         </div>
         @if(session('user')->role == 1)
-            <a href="{{ route('objects.create') }}" class="create-btn">+ Create Object</a>
+            <a href="{{ route('objects.create') }}" class="create-btn">+ Lisa objekt</a>
         @endif
     </div>
     <div class="filter-section" style="margin-bottom: 8px;">
         <div class="filter-group" style="justify-content: space-between; gap: 16px;">
             <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                <div class="chip" style="background: #2563eb;">Total {{ $summary['total'] }}</div>
-                <div class="chip" style="background: #16a34a;">Active {{ $summary['active'] }}</div>
-                <div class="chip inactive" style="background: #f97316;">Inactive {{ $summary['inactive'] }}</div>
-                <div class="chip" style="background: #0ea5e9;">Checked {{ $summary['checked'] }}</div>
-                <div class="chip inactive" style="background: #64748b;">Unchecked {{ $summary['unchecked'] }}</div>
+                <div class="chip" style="background: #2563eb;">Kokku {{ $summary['total'] }}</div>
+                <div class="chip" style="background: #16a34a;">Aktiivsed {{ $summary['active'] }}</div>
+                <div class="chip inactive" style="background: #f97316;">Mitteaktiivsed {{ $summary['inactive'] }}</div>
+                <div class="chip" style="background: #3b82f6;">💧 Vesi {{ $summary['water'] }}</div>
+                <div class="chip" style="background: #16a34a;">✓ Kõik esitatud {{ $summary['checked'] }}</div>
+                <div class="chip inactive" style="background: #64748b;">Esitamata {{ $summary['unchecked'] }}</div>
             </div>
         </div>
     </div>
@@ -444,23 +481,23 @@
     <div class="filter-section">
         <div class="filter-group">
             <form method="get" action="{{ route('objects.index') }}" class="filter-chips" id="filterForm">
-                <input type="text" name="search" class="filter-input" placeholder="Search address, city..." value="{{ request('search') }}" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
+                <input type="text" name="search" class="filter-input" placeholder="Otsi aadressi, linna..." value="{{ request('search') }}" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
 
                 <select name="company" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
-                    <option value="">All Installers</option>
-                    @foreach($companyOptions as $company)
-                        <option value="{{ $company }}" {{ request('company') == $company ? 'selected' : '' }}>{{ ['1' => 'AGR', '2' => 'Prem'][(string) $company] ?? 'Installer #' . $company }}</option>
+                    <option value="">Kõik paigaldajad</option>
+                    @foreach($companyOptions as $company => $companyLabel)
+                        <option value="{{ $company }}" {{ (string) request('company') === (string) $company ? 'selected' : '' }}>{{ $companyLabel }}</option>
                     @endforeach
                 </select>
 
                 <select name="status" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
-                    <option value="">All Status</option>
-                    <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Active Only</option>
-                    <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Inactive Only</option>
+                    <option value="">Kõik staatused</option>
+                    <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Ainult aktiivsed</option>
+                    <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Ainult mitteaktiivsed</option>
                 </select>
 
                 <select name="dtype" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
-                    <option value="">All Systems</option>
+                    <option value="">Kõik süsteemid</option>
                     <option value="1" {{ request('dtype') == 1 ? 'selected' : '' }}>💧 Apator</option>
                     <option value="2" {{ request('dtype') == 2 ? 'selected' : '' }}>🔥 Siemens</option>
                     <option value="3" {{ request('dtype') == 3 ? 'selected' : '' }}>⚡ Elekter</option>
@@ -468,19 +505,28 @@
                 </select>
 
                 <select name="checked" class="filter-input" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;">
-                    <option value="">Any Check</option>
-                    <option value="checked" {{ request('checked') === 'checked' ? 'selected' : '' }}>Checked</option>
-                    <option value="unchecked" {{ request('checked') === 'unchecked' ? 'selected' : '' }}>Unchecked</option>
+                    <option value="">Esitamine: kõik</option>
+                    <option value="checked" {{ request('checked') === 'checked' ? 'selected' : '' }}>✓ Kõik esitatud</option>
+                    <option value="water" {{ request('checked') === 'water' ? 'selected' : '' }}>💧 Vesi esitatud</option>
+                    <option value="unchecked" {{ request('checked') === 'unchecked' ? 'selected' : '' }}>Esitamata</option>
                 </select>
 
-                <button type="submit" class="chip">🔍 Apply</button>
+                <div class="manager-filter" title="Haldur">
+                    @foreach(\App\Models\AgrObject::MANAGERS as $managerId => $managerName)
+                        <label><input type="checkbox" name="manager[]" value="{{ $managerId }}" @checked(in_array($managerId, array_map('intval', (array) request('manager', [])), true))> {{ $managerName }}</label>
+                    @endforeach
+                </div>
+
+                <button type="submit" class="chip">🔍 Filtreeri</button>
             </form>
 
-            @if(request()->anyFilled(['search', 'status', 'dtype', 'company', 'checked']))
-                <a href="{{ route('objects.index') }}" class="chip" style="background: #94a3b8;">✕ Clear Filters</a>
+            @if(request()->anyFilled(['search', 'status', 'dtype', 'company', 'checked', 'manager']))
+                <a href="{{ route('objects.index') }}" class="chip" style="background: #94a3b8;">✕ Lähtesta</a>
             @endif
         </div>
     </div>
+
+    @include('partials.flash')
 
     @if($objects->count() > 0)
         <div class="objects-table">
@@ -488,35 +534,35 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Address</th>
-                            <th>City</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                        <th>Installer</th>
-                        <th>Type</th>
-                        <th>Checked</th>
-                        <th>Devices</th>
-                        <th style="text-align: center;">Errors</th>
+                            <th>Aadress</th>
+                            <th>Linn</th>
+                            <th>Kirjeldus</th>
+                            <th>Staatus</th>
+                        <th>Paigaldaja</th>
+                        <th>Süsteem</th>
+                        <th>Esitatud</th>
+                        <th>Seadmeid</th>
+                        <th style="text-align: center;">Vead</th>
                         <th>FW</th>
                         <th style="width: 50px;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($objects as $object)
-                            <tr class="{{ ($object->status == 2 ? 'inactive-row' : '') }} {{ $object->selDate ? 'selected-row' : '' }}">
+                            <tr class="{{ ($object->status == 2 ? 'inactive-row' : '') }} {{ $object->selDate ? 'selected-row' : ($object->water_checked_at ? 'water-row' : '') }}">
                                 <td class="address-cell">{{ $object->address }}</td>
                                 <td class="city-cell">{{ $object->City }}</td>
                                 <td class="description-cell">{!! nl2br(e($object->Description ?? '-')) !!}</td>
                                 <td>
                                     @if($object->status == 1)
-                                        <span class="status-pill is-active">✓ Active</span>
+                                        <span class="status-pill is-active">✓ Aktiivne</span>
                                     @elseif($object->status == 2)
-                                        <span class="status-pill is-inactive">✕ Inactive</span>
+                                        <span class="status-pill is-inactive">✕ Mitteaktiivne</span>
                                     @else
-                                        <span class="status-pill is-inactive">Unknown</span>
+                                        <span class="status-pill is-inactive">Teadmata</span>
                                     @endif
                                 </td>
-                                <td>{{ ['1' => 'AGR', '2' => 'Prem'][(string) $object->Company] ?? ($object->Company ?? '-') }}</td>
+                                <td>{{ \App\Models\AgrObject::companyDisplayName($object->Company) }}</td>
                                 <td>
                                     @if($object->dtype == 1) 💧 Apator
                                     @elseif($object->dtype == 2) 🔥 Siemens
@@ -526,30 +572,35 @@
                                 </td>
                                 <td>
                                     @if($object->selDate)
-                                        <span class="status-pill is-checked">Checked</span>
+                                        <span class="status-pill is-checked">✓ Esitatud</span>
+                                    @elseif($object->water_checked_at)
+                                        <span class="status-pill is-water">💧 Vesi</span>
                                     @else
-                                        <span class="status-pill is-unchecked">Unchecked</span>
+                                        <span class="status-pill is-unchecked">Esitamata</span>
                                     @endif
                                 </td>
                                 <td>{{ $object->Devqtty ?? 0 }}</td>
                                 <td class="errors-cell">
-                                    <span class="error-icon water" title="Water">{{ $object->water_errors ?? 0 }}</span>
-                                    <span class="error-icon warning" title="Heat">{{ $object->heat_errors ?? 0 }}</span>
-                                    <span class="error-icon danger" title="Errors">{{ $object->errors ?? 0 }}</span>
+                                    <span class="error-icon water" title="Vesi">{{ $object->water_errors ?? 0 }}</span>
+                                    <span class="error-icon warning" title="Soojus">{{ $object->heat_errors ?? 0 }}</span>
+                                    <span class="error-icon danger" title="Vead">{{ $object->errors ?? 0 }}</span>
                                 </td>
                                 <td class="fw-cell">{{ $object->ver ?? '-' }}</td>
                                 <td>
                                     <div class="row-actions">
-                                        <a href="{{ route('objects.show', $object->id) }}" class="view-btn">👁️ View</a>
+                                        <a href="{{ route('objects.show', $object->id) }}" class="view-btn">👁️ Vaata</a>
                                         @if(session('user')->role == 1)
                                         <div class="action-menu">
                                             <button class="menu-btn" onclick="toggleMenu(this)">⋯</button>
                                             <div class="menu-dropdown">
                                                 <a href="{{ route('objects.edit', $object->id) }}" class="menu-item">
-                                                    ✏️ Edit
+                                                    ✏️ Muuda
                                                 </a>
                                                 <a href="{{ route('objects.soe', $object->id) }}" class="menu-item">
                                                     ⚙️ SOE
+                                                </a>
+                                                <a href="{{ route('readings.index', $object->id) }}" class="menu-item">
+                                                    📈 Näidud
                                                 </a>
                                                 <a href="{{ route('objects.export.current', $object->id) }}" class="menu-item">
                                                     📥 Export Current Val XLSX
@@ -563,14 +614,8 @@
                                                 <a href="{{ route('objects.export.korto', $object->id) }}" class="menu-item">
                                                     📥 Export Korto CSV
                                                 </a>
-                                                <form method="post" action="{{ route('objects.check', $object->id) }}" style="margin:0;">
-                                                    @csrf
-                                                    <button type="submit" class="menu-item" onclick="return confirm('Mark as checked?')">
-                                                        ✓ Check
-                                                    </button>
-                                                </form>
-                                                <button class="menu-item delete" type="button" onclick="if(confirm('Delete this object?')) { deleteObject({{ $object->id }}) }">
-                                                    🗑️ Delete
+                                                <button class="menu-item delete" type="button" onclick="if(confirm('Kas kustutada objekt?')) { deleteObject({{ $object->id }}) }">
+                                                    🗑️ Kustuta
                                                 </button>
                                             </div>
                                         </div>
@@ -585,13 +630,13 @@
 
             @if($objects->hasPages())
                 <div class="pagination-section">
-                    <nav aria-label="Pagination Navigation">
+                    <nav aria-label="Lehekülgede navigeerimine">
                         <ul class="pagination">
                             <li class="arrow prev {{ $objects->onFirstPage() ? 'disabled' : '' }}">
                                 @if($objects->onFirstPage())
                                     <span aria-hidden="true">&laquo;</span>
                                 @else
-                                    <a href="{{ $objects->previousPageUrl() }}" rel="prev" aria-label="Previous">&laquo;</a>
+                                    <a href="{{ $objects->previousPageUrl() }}" rel="prev" aria-label="Eelmine">&laquo;</a>
                                 @endif
                             </li>
 
@@ -645,11 +690,11 @@
                                         e.preventDefault();
                                         var last = parseInt(target.dataset.last, 10) || 1;
                                         var template = target.dataset.urlTemplate || '';
-                                        var input = prompt('Перейти на страницу (1 - ' + last + ')');
+                                        var input = prompt('Mine lehele (1 - ' + last + ')');
                                         if(input === null) return;
                                         var page = parseInt(input, 10);
                                         if(isNaN(page) || page < 1 || page > last){
-                                            alert('Неправильный номер страницы');
+                                            alert('Vale lehekülje number');
                                             return;
                                         }
                                         var url = template.replace('__PAGE__', page);
@@ -660,7 +705,7 @@
 
                             <li class="arrow next {{ $objects->hasMorePages() ? '' : 'disabled' }}">
                                 @if($objects->hasMorePages())
-                                    <a href="{{ $objects->nextPageUrl() }}" rel="next" aria-label="Next">&raquo;</a>
+                                    <a href="{{ $objects->nextPageUrl() }}" rel="next" aria-label="Järgmine">&raquo;</a>
                                 @else
                                     <span aria-hidden="true">&raquo;</span>
                                 @endif
@@ -673,8 +718,8 @@
     @else
         <div class="empty-state">
             <div class="empty-icon">📭</div>
-            <h3>No objects found</h3>
-            <p>Try adjusting your filters or create a new object</p>
+            <h3>Objekte ei leitud</h3>
+            <p>Muuda filtreid või lisa uus objekt</p>
         </div>
     @endif
 

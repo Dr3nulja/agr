@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="et">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'AGR Dashboard')</title>
+    <title>@yield('title', 'AGR')</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
     <style>
         :root {
@@ -213,10 +213,10 @@
 
             <div class="navbar-center">
                 <a href="{{ route('dashboard') }}" class="navbar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    Dashboard
+                    Töölaud
                 </a>
                 <a href="{{ route('objects.index') }}" class="navbar-link {{ request()->routeIs('objects.*') ? 'active' : '' }}">
-                    Objects
+                    Objektid
                 </a>
                 <a href="{{ route('tasks.index') }}" class="navbar-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
                     Ülesanded
@@ -237,14 +237,14 @@
                     <div class="navbar-user-info">
                         <div class="navbar-user-name">{{ session('user')->name }}</div>
                         <div class="navbar-user-role">
-                            {{ session('user')->role == 1 ? 'Admin' : 'User' }}
+                            {{ session('user')->role == 1 ? 'Admin' : 'Kasutaja' }}
                         </div>
                     </div>
                 </div>
 
                 <form method="POST" action="{{ route('logout') }}" style="margin: 0;">
                     @csrf
-                    <button type="submit" class="navbar-btn">Logout</button>
+                    <button type="submit" class="navbar-btn">Logi välja</button>
                 </form>
             </div>
         </div>

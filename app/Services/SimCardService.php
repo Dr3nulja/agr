@@ -50,8 +50,9 @@ class SimCardService
     /**
      * Поставить свободную/выданную карту в слот объекта. Слот должен быть пуст:
      * замену делает setObjectSlot (старая карта уходит в свободные).
+     * $installer — кто ставит карту; без него остаётся техник, которому карта была выдана.
      */
-    public function assign(SimCard $sim, AgrObject $object, int $slot): void
+    public function assign(SimCard $sim, AgrObject $object, int $slot, ?string $installer = null): void
     {
         if ($sim->isAssigned()) {
             if ((int) $sim->object_id === (int) $object->id && (int) $sim->slot === $slot) {
@@ -67,7 +68,10 @@ class SimCardService
             ]);
         }
 
-        DB::transaction(function () use ($sim, $object, $slot) {
+        DB::transaction(function () use ($sim, $object, $slot, $installer) {
+            if ($installer !== null) {
+                $sim->issued_to = $installer;
+            }
             $sim->status = SimCard::STATUS_ASSIGNED;
             $sim->object_id = $object->id;
             $sim->slot = $slot;

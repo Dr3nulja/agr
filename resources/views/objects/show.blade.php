@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'View Object - AGR')
+@section('title', 'Objekt - AGR')
 
 @section('extra-styles')
     <style>
@@ -129,29 +129,92 @@
             font-weight: 500;
         }
 
+        .device-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .device-table th.sortable:hover {
+            color: var(--primary);
+        }
+
+        .check-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .check-steps {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .check-step {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            background: var(--bg);
+        }
+
+        .check-step.is-water {
+            background: oklch(0.94 0.05 250);
+            border-color: oklch(0.82 0.09 250);
+            color: oklch(0.42 0.15 250);
+        }
+
+        .check-step.is-all {
+            background: oklch(0.94 0.06 155);
+            border-color: oklch(0.8 0.1 155);
+            color: oklch(0.4 0.12 155);
+        }
+
+        .btn-check-water {
+            background: oklch(0.58 0.17 250);
+            color: white;
+        }
+
+        .btn-check-final {
+            background: oklch(0.6 0.15 155);
+            color: white;
+        }
+
     </style>
 @endsection
 
 @section('content')
+    @include('partials.flash')
+
     <div class="panel" style="padding-bottom: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
                 <h2 style="margin-bottom: 4px;">{{ $object['address'] }}</h2>
                 <div style="color: var(--text-muted);">
-                    {{ $object['City'] ?? '—' }} · {{ ['1' => 'Apator', '2' => 'Siemens', '3' => 'Elekter', '4' => 'LoRa'][(string) $object['dtype']] ?? 'type ' . $object['dtype'] }} · IMEI: {{ $object['IMEI'] ?? '—' }}
+                    {{ $object['City'] ?? '—' }} · {{ ['1' => 'Apator', '2' => 'Siemens', '3' => 'Elekter', '4' => 'LoRa'][(string) $object['dtype']] ?? 'tüüp ' . $object['dtype'] }} · IMEI: {{ $object['IMEI'] ?? '—' }}
                 </div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <a href="{{ route('readings.index', $object['id']) }}" class="btn btn-secondary">📈 Näidud</a>
                 @if(session('user')->role == 1)
-                    <a href="{{ route('objects.edit', $object['id']) }}" class="btn btn-primary">✏️ Edit</a>
-                    <a href="{{ route('objects.devices.upload', $object['id']) }}" class="btn btn-secondary">📤 Upload Device List</a>
-                    <a href="{{ route('objects.import-csv', $object['id']) }}" class="btn btn-secondary">📄 Import CSV</a>
-                    <a href="{{ route('objects.export.current', $object['id']) }}" class="btn btn-secondary">📥 Export Current Val XLSX</a>
-                    <a href="{{ route('objects.export.month_start', $object['id']) }}" class="btn btn-secondary">📥 Export Month Start</a>
-                    <a href="{{ route('objects.export.alokator', $object['id']) }}" class="btn btn-secondary">📥 Export Alokator XLSX</a>
-                    <a href="{{ route('objects.export.korto', $object['id']) }}" class="btn btn-secondary">📥 Export Korto CSV</a>
+                    <a href="{{ route('objects.edit', $object['id']) }}" class="btn btn-primary">✏️ Muuda</a>
+                    <a href="{{ route('objects.devices.upload', $object['id']) }}" class="btn btn-secondary">📤 Laadi seadmete nimekiri</a>
+                    <a href="{{ route('objects.import-csv', $object['id']) }}" class="btn btn-secondary">📄 Impordi CSV</a>
+                    <a href="{{ route('objects.export.current', $object['id']) }}" class="btn btn-secondary">📥 Praegused näidud XLSX</a>
+                    <a href="{{ route('objects.export.month_start', $object['id']) }}" class="btn btn-secondary">📥 Kuu algnäidud XLSX</a>
+                    <a href="{{ route('objects.export.alokator', $object['id']) }}" class="btn btn-secondary">📥 Jaoturid XLSX</a>
+                    <a href="{{ route('objects.export.korto', $object['id']) }}" class="btn btn-secondary">📥 Korto CSV</a>
                 @endif
-                <a href="{{ route('objects.index') }}" class="btn btn-secondary">← Back</a>
+                <a href="{{ route('objects.index') }}" class="btn btn-secondary">← Tagasi</a>
             </div>
         </div>
 
@@ -163,39 +226,89 @@
 
         <div class="info-grid" style="margin-top: 20px; gap: 14px;">
             <div class="info-box">
-                <div class="info-label">Company</div>
-                <div class="info-value">{{ ['1' => 'AGR', '2' => 'Prem'][(string) $object['Company']] ?? ($object['Company'] ?? '—') }}</div>
+                <div class="info-label">Firma</div>
+                <div class="info-value">{{ \App\Models\AgrObject::companyDisplayName($object['Company']) }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Status</div>
-                <div class="info-value">{{ $object['status'] == 1 ? 'Active' : ($object['status'] == 2 ? 'Inactive' : 'Unknown') }}</div>
+                <div class="info-label">Staatus</div>
+                <div class="info-value">{{ $object['status'] == 1 ? 'Aktiivne' : ($object['status'] == 2 ? 'Mitteaktiivne' : 'Teadmata') }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Checked</div>
-                <div class="info-value">{{ $object['selDate'] ? date('d.m.Y H:i', strtotime($object['selDate'])) : 'No' }}</div>
+                <div class="info-label">Haldur</div>
+                <div class="info-value">{{ \App\Models\AgrObject::managerName($object['manager']) }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Last Communication</div>
+                <div class="info-label">Viimane ühendus</div>
                 <div class="info-value">{{ !empty($object['lastSession']) ? date('d.m.Y H:i', strtotime($object['lastSession'])) : '—' }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">FW Version</div>
+                <div class="info-label">Püsivara versioon</div>
                 <div class="info-value">{{ $object['ver'] ?? '—' }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Device Rows</div>
+                <div class="info-label">Seadmeid</div>
                 <div class="info-value">{{ count($devices) }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Install Rows</div>
+                <div class="info-label">Paigaldusridu</div>
                 <div class="info-value">{{ count($installData) }}</div>
             </div>
         </div>
     </div>
 
+    <div class="panel">
+        <div class="check-panel">
+            <div>
+                <h3 class="section-title" style="margin-top: 0;">✅ Andmete esitamine</h3>
+                <div class="check-steps">
+                    @if($model->selDate)
+                        @if($model->water_checked_at && $model->heat_checked_at)
+                            <span class="check-step is-water">💧 Vesi {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
+                        @endif
+                        <span class="check-step is-all">✓ Kõik esitatud {{ $model->selDate->format('d.m.Y H:i') }}</span>
+                    @elseif($model->water_checked_at)
+                        <span class="check-step is-water">💧 Vesi esitatud {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
+                        <span class="check-step">🔥 Soojus ootab</span>
+                    @else
+                        <span class="check-step">Esitamata</span>
+                    @endif
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">
+                    Aruannete e-post: {{ $model->report_emails ?: '— (lisa objekti muutmise vormis)' }}
+                </div>
+            </div>
+            @if(session('user')->role == 1)
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    @if($nextCheck)
+                        @php
+                            $stepLabel = $nextCheck === 'water' ? 'vesi' : 'soojus';
+                            $checkClass = $nextCheckIsFinal ? 'btn-check-final' : 'btn-check-water';
+                        @endphp
+                        @if($model->report_emails)
+                            <form method="post" action="{{ route('objects.send-report', $object['id']) }}" style="margin: 0;" onsubmit="return confirm('Saata {{ $stepLabel === 'vesi' ? 'veemõõtjate' : 'jaoturite' }} aruanne objekti e-posti aadressidele ja märkida {{ $stepLabel }} esitatuks?');">
+                                @csrf
+                                <button type="submit" class="btn {{ $checkClass }}">📧 Saada ({{ $stepLabel }}) + märgi esitatuks</button>
+                            </form>
+                        @endif
+                        <form method="post" action="{{ route('objects.check', $object['id']) }}" style="margin: 0;" onsubmit="return confirm('Märkida {{ $stepLabel }} esitatuks ilma saatmata?');">
+                            @csrf
+                            <button type="submit" class="btn {{ $model->report_emails ? 'btn-secondary' : $checkClass }}">✓ Märgi esitatuks: {{ $stepLabel }}{{ $nextCheckIsFinal ? ' (kõik)' : '' }}</button>
+                        </form>
+                    @endif
+                    @if($model->selDate || $model->water_checked_at)
+                        <form method="post" action="{{ route('objects.uncheck', $object['id']) }}" style="margin: 0;" onsubmit="return confirm('Eemaldada märked?');">
+                            @csrf
+                            <button type="submit" class="btn btn-secondary">↩ Eemalda märked</button>
+                        </form>
+                    @endif
+                </div>
+            @endif
+        </div>
+    </div>
+
     @if(session('user')->role == 1)
         <div class="panel">
-            <h3 class="section-title">📡 Send Command</h3>
+            <h3 class="section-title">📡 Saada käsk</h3>
             <form method="post" action="{{ route('objects.command', $object['id']) }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                 @csrf
                 <select name="command" required style="padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
@@ -203,7 +316,7 @@
                         <option value="{{ $value }}">{{ $label }}</option>
                     @endforeach
                 </select>
-                <button type="submit" class="btn btn-primary">Send</button>
+                <button type="submit" class="btn btn-primary">Saada</button>
             </form>
         </div>
     @endif
@@ -227,10 +340,10 @@
     </div>
 
     <div class="panel">
-        <h3 class="section-title">🧾 Object Info</h3>
+        <h3 class="section-title">🧾 Objekti andmed</h3>
         <div class="info-grid" style="margin-top: 14px; gap: 16px;">
             <div class="info-box">
-                <div class="info-label">Object ID</div>
+                <div class="info-label">Objekti ID</div>
                 <div class="info-value">{{ $object['id'] }}</div>
             </div>
             <div class="info-box">
@@ -250,6 +363,9 @@
                             @if($sim->iccid)
                                 <div style="font-size: 0.8rem; color: var(--text-muted); font-family: 'IBM Plex Mono', ui-monospace, monospace;">{{ $sim->iccid }}</div>
                             @endif
+                            @if($sim->issued_to)
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">paigaldas {{ $sim->issued_to }}</div>
+                            @endif
                         @else
                             —
                         @endif
@@ -257,11 +373,11 @@
                 </div>
             @endforeach
             <div class="info-box">
-                <div class="info-label">Contact</div>
+                <div class="info-label">Kontakt</div>
                 <div class="info-value">{{ $object['Contact'] ?? '—' }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Sum</div>
+                <div class="info-label">Summa</div>
                 <div class="info-value">{{ $object['summ'] ?? 0 }}</div>
             </div>
         </div>
@@ -270,33 +386,33 @@
         <div id="fullInfoPanel" hidden>
         <div class="info-grid" style="margin-top: 16px; gap: 16px;">
             <div class="info-box">
-                <div class="info-label">Packet</div>
+                <div class="info-label">Pakett</div>
                 <div class="info-value">{{ $object['packet'] ?? '—' }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Traffic</div>
+                <div class="info-label">Liiklus</div>
                 <div class="info-value">{{ $object['traffic'] ?? '—' }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Call Count</div>
+                <div class="info-label">Kõnede arv</div>
                 <div class="info-value">{{ $object['callCnt'] ?? 0 }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">CSQ Logs</div>
+                <div class="info-label">CSQ kirjeid</div>
                 <div class="info-value">{{ count($csqLogs) }}</div>
             </div>
         </div>
         </div>
 
         <button type="button" id="fullInfoToggle" class="btn btn-secondary" style="margin-top: 16px; padding: 8px 18px; font-size: 0.85rem;" aria-expanded="false" aria-controls="fullInfoPanel">
-            ▾ Show full info
+            ▾ Näita kõiki andmeid
         </button>
     </div>
 
     <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom: 18px;">
-            <h3 class="section-title" style="margin:0;">View Records</h3>
-            <input id="deviceSearch" type="search" placeholder="Search by ID / location / date" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); width: 260px;" />
+            <h3 class="section-title" style="margin:0;">Seadmete näidud</h3>
+            <input id="deviceSearch" type="search" placeholder="Otsi ID / korteri / kuupäeva järgi" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); width: 260px;" />
         </div>
 
         @if(count($devices) > 0)
@@ -305,14 +421,14 @@
                     <thead>
                         <tr>
                             <th>№</th>
-                            <th>Korter</th>
-                            <th>ID</th>
-                            <th>Type</th>
-                            <th style="text-align:right;">Prev</th>
-                            <th style="text-align:right;">Curr</th>
-                            <th style="text-align:right;">Delta</th>
-                            <th>Date</th>
-                            <th>Status</th>
+                            <th class="sortable" data-sort="location">Korter <span class="sort-mark"></span></th>
+                            <th class="sortable" data-sort="devid">ID <span class="sort-mark"></span></th>
+                            <th>Tüüp</th>
+                            <th style="text-align:right;">Eelmine</th>
+                            <th style="text-align:right;">Praegune</th>
+                            <th style="text-align:right;">Vahe</th>
+                            <th class="sortable" data-sort="date" title="Sorteeri kuupäeva järgi">Kuupäev <span class="sort-mark"></span></th>
+                            <th>Staatus</th>
                         </tr>
                     </thead>
                     <tbody id="deviceTableBody">
@@ -322,11 +438,11 @@
                                 $curr = $device['mvalue'] ?? 0;
                                 $delta = $curr - $prev;
                             @endphp
-                            <tr class="{{ $device['err_class'] ? 'row-error' : '' }} device-row {{ $loop->iteration > 25 ? 'row-limited' : '' }}">
-                                <td>{{ $loop->iteration }}</td>
+                            <tr class="{{ $device['err_class'] ? 'row-error' : '' }} device-row {{ $loop->iteration > 25 ? 'row-limited' : '' }}" data-date="{{ $device['timestamp'] }}" data-devid="{{ $device['devid'] }}" data-location="{{ $device['location'] }}">
+                                <td class="row-number">{{ $loop->iteration }}</td>
                                 <td>{{ $device['location'] ?? '-' }}</td>
                                 <td class="device-id">{{ $device['devid'] }}</td>
-                                <td>{{ $device['devtype'] === 1 ? 'külm' : ($device['devtype'] === 2 ? 'soe' : ($device['devtype'] === 3 ? 'electric' : 'type ' . $device['devtype'])) }}</td>
+                                <td>{{ $device['devtype'] === 1 ? 'külm' : ($device['devtype'] === 2 ? 'soe' : ($device['devtype'] === 3 ? 'jaotur' : 'tüüp ' . $device['devtype'])) }}</td>
                                 <td style="text-align:right;">{{ number_format($prev, 3, '.', '') }}</td>
                                 <td style="text-align:right;">{{ number_format($curr, 3, '.', '') }}</td>
                                 <td style="text-align:right;">{{ number_format($delta, 3, '.', '') }}</td>
@@ -341,14 +457,14 @@
             @if(count($devices) > 25)
                 <div style="text-align:center; margin-top:14px;">
                     <button type="button" id="deviceShowMoreBtn" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
-                        Show all {{ count($devices) }} devices
+                        Näita kõiki {{ count($devices) }} seadet
                     </button>
                 </div>
             @endif
 
             <div class="panel" style="margin-top: 10px;">
                 <button type="button" id="legacyDetailsToggle" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
-                    🧾 Show Legacy Device Details ({{ count($devices) }})
+                    🧾 Seadmete tehnilised andmed ({{ count($devices) }})
                 </button>
                 <div id="legacyDetailsPanel" style="display:none; margin-top: 16px; overflow-x:auto;">
                     <table class="legacy-table" style="width:100%; border-collapse: collapse; min-width: 1020px;">
@@ -359,9 +475,9 @@
                                 <th>mvalue</th>
                                 <th>t1</th>
                                 <th>t2</th>
-                                <th>error</th>
-                                <th>errorDate</th>
-                                <th>last insert</th>
+                                <th>viga</th>
+                                <th>vea kuupäev</th>
+                                <th>viimati lisatud</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -382,42 +498,42 @@
                 </div>
             </div>
         @else
-            <div class="placeholder">No device records available for this object.</div>
+            <div class="placeholder">Objektil pole seadmeid.</div>
         @endif
     </div>
 
     <div class="panel">
-        <h3 class="section-title">📌 Object Summary</h3>
+        <h3 class="section-title">📌 Kokkuvõte</h3>
         <div class="info-grid">
             <div class="info-box">
-                <div class="info-label">Water Errors</div>
+                <div class="info-label">Vee vead</div>
                 <div class="info-value">{{ $legacyErrorCounts['water_errors'] ?? 0 }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Heat Errors</div>
+                <div class="info-label">Soojuse vead</div>
                 <div class="info-value">{{ $legacyErrorCounts['heat_errors'] ?? 0 }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Legacy Errors</div>
+                <div class="info-label">Seadmete vead</div>
                 <div class="info-value">{{ $legacyErrorCounts['errors'] ?? 0 }}</div>
             </div>
             <div class="info-box">
-                <div class="info-label">Install Rows</div>
+                <div class="info-label">Paigaldusridu</div>
                 <div class="info-value">{{ count($installData) }}</div>
             </div>
         </div>
     </div>
 
     <div class="panel">
-        <h3 class="section-title">📦 Install Data</h3>
+        <h3 class="section-title">📦 Paigaldusandmed</h3>
         @if(count($installData) > 0)
             <div style="overflow-x:auto;">
                 <table class="info-table" style="width:100%; border-collapse: collapse;">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Location</th>
-                            <th>Comment</th>
+                            <th>Asukoht</th>
+                            <th>Kommentaar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -432,18 +548,18 @@
                 </table>
             </div>
         @else
-            <div class="placeholder">No install data available for this object.</div>
+            <div class="placeholder">Paigaldusandmeid pole.</div>
         @endif
     </div>
 
     <div class="panel">
-        <h3 class="section-title">📶 Signal Quality (CSQ) Logs</h3>
+        <h3 class="section-title">📶 Signaali tugevus (CSQ)</h3>
         @if(count($csqLogs) > 0)
             <div style="overflow-x:auto;">
                 <table class="info-table" style="width:100%; border-collapse: collapse;">
                     <thead>
                         <tr>
-                            <th>Date</th>
+                            <th>Kuupäev</th>
                             <th style="text-align:center;">CSQ</th>
                         </tr>
                     </thead>
@@ -458,7 +574,7 @@
                 </table>
             </div>
         @else
-            <div class="placeholder">No CSQ logs found for this object.</div>
+            <div class="placeholder">CSQ kirjeid pole.</div>
         @endif
     </div>
 @endsection
@@ -466,9 +582,44 @@
 @section('extra-scripts')
     <script>
         const deviceSearch = document.getElementById('deviceSearch');
-        const deviceRows = document.querySelectorAll('#deviceTableBody tr');
+        const deviceBody = document.getElementById('deviceTableBody');
+        let deviceRows = document.querySelectorAll('#deviceTableBody tr');
         const showMoreBtn = document.getElementById('deviceShowMoreBtn');
         let showingAll = false;
+
+        // Сортировка View Records: клик по Korter / ID / Date, повторный клик — обратный порядок.
+        // После сортировки первые 25 строк — снова видимые, остальные под «Show all».
+        const sortState = { key: null, dir: 1 };
+        document.querySelectorAll('.device-table th.sortable').forEach(th => {
+            th.addEventListener('click', function () {
+                const key = this.dataset.sort;
+                sortState.dir = sortState.key === key ? -sortState.dir : (key === 'date' ? -1 : 1);
+                sortState.key = key;
+
+                const rows = Array.from(deviceBody.rows);
+                rows.sort((a, b) => {
+                    const x = a.dataset[key] || '';
+                    const y = b.dataset[key] || '';
+                    const cmp = key === 'location'
+                        ? x.localeCompare(y, undefined, { numeric: true })
+                        : (Number(x) - Number(y));
+                    return cmp * sortState.dir;
+                });
+                rows.forEach((row, index) => {
+                    deviceBody.appendChild(row);
+                    row.querySelector('.row-number').textContent = index + 1;
+                    row.classList.toggle('row-limited', index >= 25);
+                    row.style.display = (index >= 25 && !showingAll) ? 'none' : '';
+                });
+                deviceRows = deviceBody.querySelectorAll('tr');
+                if (deviceSearch && deviceSearch.value) {
+                    deviceSearch.dispatchEvent(new Event('input'));
+                }
+
+                document.querySelectorAll('.device-table th.sortable .sort-mark').forEach(mark => mark.textContent = '');
+                this.querySelector('.sort-mark').textContent = sortState.dir === 1 ? '▲' : '▼';
+            });
+        });
 
         // Hide rows past the initial limit via inline style, so later toggles
         // (which also set inline style) aren't fought by a stylesheet rule.
@@ -502,7 +653,7 @@
                         row.style.display = showingAll ? '' : 'none';
                     }
                 });
-                this.textContent = showingAll ? 'Show fewer devices' : 'Show all ' + deviceRows.length + ' devices';
+                this.textContent = showingAll ? 'Näita vähem' : 'Näita kõiki ' + deviceRows.length + ' seadet';
             });
         }
 
@@ -523,7 +674,7 @@
             fullInfoToggle.addEventListener('click', function () {
                 fullInfoPanel.hidden = !fullInfoPanel.hidden;
                 this.setAttribute('aria-expanded', String(!fullInfoPanel.hidden));
-                this.textContent = fullInfoPanel.hidden ? '▾ Show full info' : '▴ Hide full info';
+                this.textContent = fullInfoPanel.hidden ? '▾ Näita kõiki andmeid' : '▴ Peida';
             });
         }
     </script>

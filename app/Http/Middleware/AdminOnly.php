@@ -13,7 +13,7 @@ class AdminOnly
         $user = session('user');
 
         if (! $user || ! isset($user->role) || (int) $user->role !== 1) {
-            return redirect()->route('objects.index')->with('error', 'У вас нет прав для доступа к этой странице.');
+            return redirect()->route('objects.index')->with('error', 'Sul pole sellele lehele ligipääsu.');
         }
 
         return $next($request);

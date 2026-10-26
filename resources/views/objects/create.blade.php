@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Create Object - AGR')
+@section('title', 'Uus objekt - AGR')
 
 @section('extra-styles')
     <style>
@@ -132,8 +132,8 @@
 
 @section('content')
     <div class="panel">
-        <h2>➕ Create New Object</h2>
-        <p style="color: var(--text-muted); margin-top: 4px;">Add a new object to the system</p>
+        <h2>➕ Uus objekt</h2>
+        <p style="color: var(--text-muted); margin-top: 4px;">Lisa süsteemi uus objekt</p>
 
         @if ($errors->any())
             <div class="error-message">{{ $errors->first() }}</div>
@@ -142,29 +142,30 @@
         <form method="post" action="{{ route('objects.store') }}">
             @csrf
             <div class="grid">
-                <div class="field"><label>Address *</label><input name="address" value="{{ old('address') }}" placeholder="Street address" required></div>
-                <div class="field"><label>City *</label><input name="City" value="{{ old('City') }}" placeholder="City name" required></div>
-                <div class="field"><label>Contact Person</label><input name="Contact" value="{{ old('Contact') }}" placeholder="Name"></div>
-                <div class="field"><label>IMEI *</label><input name="IMEI" value="{{ old('IMEI') }}" placeholder="Device IMEI" required></div>
-                <div class="field"><label>IMEI 2</label><input name="IMEI2" value="{{ old('IMEI2') }}" placeholder="Second IMEI"></div>
+                <div class="field"><label>Aadress *</label><input name="address" value="{{ old('address') }}" placeholder="Tänav ja maja" required></div>
+                <div class="field"><label>Linn *</label><input name="City" value="{{ old('City') }}" placeholder="Linn" required></div>
+                <div class="field"><label>Kontaktisik</label><input name="Contact" value="{{ old('Contact') }}" placeholder="Nimi"></div>
+                <div class="field"><label>Aruannete e-post (mitu komaga)</label><input name="report_emails" value="{{ old('report_emails') }}" placeholder="haldur@example.ee, raamatupidaja@example.ee"></div>
+                <div class="field"><label>IMEI *</label><input name="IMEI" value="{{ old('IMEI') }}" placeholder="Seadme IMEI" required></div>
+                <div class="field"><label>IMEI 2</label><input name="IMEI2" value="{{ old('IMEI2') }}" placeholder="Teine IMEI"></div>
                 @include('objects._sim-slots')
-                <div class="field"><label>Device Quantity</label><input name="Devqtty" type="number" min="0" value="{{ old('Devqtty', 1) }}"></div>
-                <div class="field"><label>Radio Device Quantity</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', 0) }}"></div>
-                <div class="field"><label>Main Radio Location</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', 0) }}"></div>
-                <div class="field"><label>Key Code</label><input name="KeyCode" value="{{ old('KeyCode') }}"></div>
-                <div class="field"><label>Package</label><input name="packet" value="{{ old('packet') }}" placeholder="Package"></div>
-                <div class="field"><label>Traffic</label><input name="traffic" value="{{ old('traffic') }}" placeholder="Traffic plan"></div>
-                <div class="field"><label>Call Count</label><input name="callCnt" type="number" min="0" value="{{ old('callCnt', 0) }}"></div>
-                <div class="field"><label>Sum</label><input name="summ" type="number" step="0.01" min="0" value="{{ old('summ', 0) }}"></div>
-                <div class="field"><label>Latitude</label><input name="lat" type="number" step="0.000001" value="{{ old('lat') }}"></div>
-                <div class="field"><label>Longitude</label><input name="lon" type="number" step="0.000001" value="{{ old('lon') }}"></div>
-                <div class="field span-2"><label>Installer</label>
+                <div class="field"><label>Seadmete arv</label><input name="Devqtty" type="number" min="0" value="{{ old('Devqtty', 1) }}"></div>
+                <div class="field"><label>Raadioseadmete arv</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', 0) }}"></div>
+                <div class="field"><label>Peamise raadio asukoht</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', 0) }}"></div>
+                <div class="field"><label>Uksekood</label><input name="KeyCode" value="{{ old('KeyCode') }}"></div>
+                <div class="field"><label>Pakett</label><input name="packet" value="{{ old('packet') }}" placeholder="Pakett"></div>
+                <div class="field"><label>Liiklus</label><input name="traffic" value="{{ old('traffic') }}" placeholder="Liiklus"></div>
+                <div class="field"><label>Kõnede arv</label><input name="callCnt" type="number" min="0" value="{{ old('callCnt', 0) }}"></div>
+                <div class="field"><label>Summa</label><input name="summ" type="number" step="0.01" min="0" value="{{ old('summ', 0) }}"></div>
+                <div class="field"><label>Laiuskraad</label><input name="lat" type="number" step="0.000001" value="{{ old('lat') }}"></div>
+                <div class="field"><label>Pikkuskraad</label><input name="lon" type="number" step="0.000001" value="{{ old('lon') }}"></div>
+                <div class="field span-2"><label>Paigaldaja</label>
                     <div class="radio-row">
                         <label><input type="radio" name="Company" value="1" {{ old('Company', 1) == 1 ? 'checked' : '' }}> AGR</label>
                         <label><input type="radio" name="Company" value="2" {{ old('Company') == 2 ? 'checked' : '' }}> Prem</label>
                     </div>
                 </div>
-                <div class="field span-2"><label>System</label>
+                <div class="field span-2"><label>Süsteem</label>
                     <div class="radio-row">
                         <label><input type="radio" name="dtype" value="1" {{ old('dtype', 1) == 1 ? 'checked' : '' }}> Apator</label>
                         <label><input type="radio" name="dtype" value="2" {{ old('dtype') == 2 ? 'checked' : '' }}> Siemens</label>
@@ -172,7 +173,7 @@
                         <label><input type="radio" name="dtype" value="4" {{ old('dtype') == 4 ? 'checked' : '' }}> LoRa</label>
                     </div>
                 </div>
-                <div class="field span-2"><label>Manager</label>
+                <div class="field span-2"><label>Haldur</label>
                     <div class="radio-row">
                         <label><input type="radio" name="manager" value="1" {{ old('manager', 1) == 1 ? 'checked' : '' }}> IRA</label>
                         <label><input type="radio" name="manager" value="2" {{ old('manager') == 2 ? 'checked' : '' }}> KAT</label>
@@ -180,20 +181,20 @@
                         <label><input type="radio" name="manager" value="4" {{ old('manager') == 4 ? 'checked' : '' }}> NAT</label>
                     </div>
                 </div>
-                <div class="field"><label>Status</label>
+                <div class="field"><label>Staatus</label>
                     <select name="status">
-                        <option value="1" {{ old('status', '1') == '1' ? 'selected' : '' }}>Active</option>
-                        <option value="2" {{ old('status') == '2' ? 'selected' : '' }}>Inactive</option>
+                        <option value="1" {{ old('status', '1') == '1' ? 'selected' : '' }}>Aktiivne</option>
+                        <option value="2" {{ old('status') == '2' ? 'selected' : '' }}>Mitteaktiivne</option>
                     </select>
                 </div>
-                <div class="field"><label class="checkbox-label"><input type="checkbox" name="saveHval" value="1" {{ old('saveHval') ? 'checked' : '' }}> Save month statistics</label></div>
-                <div class="field span-2"><label>Description</label><textarea name="Description" placeholder="Object description...">{{ old('Description') }}</textarea></div>
-                <div class="field span-2"><label>Second description</label><textarea name="Description2" placeholder="Additional notes...">{{ old('Description2') }}</textarea></div>
+                <div class="field"><label class="checkbox-label"><input type="checkbox" name="saveHval" value="1" {{ old('saveHval') ? 'checked' : '' }}> Salvesta kuu statistika</label></div>
+                <div class="field span-2"><label>Kirjeldus</label><textarea name="Description" placeholder="Objekti kirjeldus...">{{ old('Description') }}</textarea></div>
+                <div class="field span-2"><label>Lisakirjeldus</label><textarea name="Description2" placeholder="Lisamärkused...">{{ old('Description2') }}</textarea></div>
             </div>
 
             <div class="actions">
-                <button class="btn btn-primary" type="submit">✅ Create Object</button>
-                <a class="btn btn-secondary" href="{{ route('objects.index') }}">← Cancel</a>
+                <button class="btn btn-primary" type="submit">✅ Lisa objekt</button>
+                <a class="btn btn-secondary" href="{{ route('objects.index') }}">← Tühista</a>
             </div>
         </form>
     </div>

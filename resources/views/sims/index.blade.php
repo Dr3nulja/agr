@@ -231,6 +231,7 @@
                                                             <option value="{{ $slot }}">{{ $label }}</option>
                                                         @endforeach
                                                     </select>
+                                                    <input name="installer" list="sim-technicians" class="sim-input" placeholder="Paigaldaja (kellele)" value="{{ $sim->issued_to }}" style="flex:1 1 140px;">
                                                     <button type="submit" class="sim-btn">Määra</button>
                                                 </form>
 

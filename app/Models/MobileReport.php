@@ -71,6 +71,7 @@ class MobileReport extends Model
         'allocator_location_comment' => ['Asukoha täpsustus', 'allocator'],
         'radiator_type' => ['Radiaatori tüüp', 'allocator'],
         'radiator_panel_type' => ['Radiaatori paneel', 'allocator'],
+        'radiator_ribs' => ['Ribide arv', 'allocator'],
         'radiator_width' => ['Radiaatori laius', 'allocator'],
         'radiator_depth' => ['Radiaatori sügavus', 'allocator'],
         'radiator_height' => ['Radiaatori kõrgus', 'allocator'],

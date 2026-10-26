@@ -14,7 +14,7 @@ class CheckSession
     public function handle(Request $request, Closure $next): Response
     {
         if (!session('user_id') || !session('user')) {
-            return redirect()->route('login')->with('error', 'Пожалуйста, войдите в систему');
+            return redirect()->route('login')->with('error', 'Palun logi sisse');
         }
 
         return $next($request);

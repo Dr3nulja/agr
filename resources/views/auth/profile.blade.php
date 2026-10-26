@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Profile - AGR')
+@section('title', 'Profiil - AGR')
 
 @section('extra-styles')
     <style>
@@ -153,41 +153,41 @@
         </div>
 
         <div class="info-group">
-            <div class="info-group-title">Account Information</div>
+            <div class="info-group-title">Konto andmed</div>
             <div class="info-row">
-                <span class="info-label">Full Name</span>
+                <span class="info-label">Nimi</span>
                 <span class="info-value">{{ $user->name }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Login</span>
+                <span class="info-label">Kasutajanimi</span>
                 <span class="info-value">{{ $user->login }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Role</span>
+                <span class="info-label">Roll</span>
                 <span class="info-value">
                     @if($user->role === 1)
-                        <span class="badge badge-admin">Administrator</span>
+                        <span class="badge badge-admin">Administraator</span>
                     @else
-                        <span class="badge badge-user">User</span>
+                        <span class="badge badge-user">Kasutaja</span>
                     @endif
                 </span>
             </div>
         </div>
 
         <div class="info-group">
-            <div class="info-group-title">System Information</div>
+            <div class="info-group-title">Süsteemi andmed</div>
             <div class="info-row">
-                <span class="info-label">User ID</span>
+                <span class="info-label">Kasutaja ID</span>
                 <span class="info-value">#{{ $user->id }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Session Status</span>
-                <span class="info-value" style="color: #059669;">✓ Active</span>
+                <span class="info-label">Seanss</span>
+                <span class="info-value" style="color: #059669;">✓ Aktiivne</span>
             </div>
         </div>
 
         <div class="actions">
-            <a href="{{ route('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+            <a href="{{ route('dashboard') }}" class="btn btn-secondary">← Tagasi töölauale</a>
         </div>
     </div>
 @endsection

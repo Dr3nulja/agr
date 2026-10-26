@@ -28,7 +28,7 @@ class AuthController extends Controller
         $user = User::where('login', $validated['login'])->first();
 
         if (!$user || !$user->verifyPassword($validated['password'])) {
-            return back()->withErrors(['login' => 'Неверные учетные данные'])->onlyInput('login');
+            return back()->withErrors(['login' => 'Vale kasutajanimi või parool'])->onlyInput('login');
         }
 
         // Прозрачно переводим старые MD5-хэши на bcrypt при успешном входе

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Object - AGR')
+@section('title', 'Muuda objekti - AGR')
 
 @section('extra-styles')
     <style>
@@ -131,8 +131,8 @@
 
 @section('content')
     <div class="panel">
-        <h2>✏️ Edit Object</h2>
-        <p style="color: var(--text-muted); margin-top: 4px;">Update object details</p>
+        <h2>✏️ Muuda objekti</h2>
+        <p style="color: var(--text-muted); margin-top: 4px;">Objekti andmete muutmine</p>
 
         @if ($errors->any())
             <div class="error-message">{{ $errors->first() }}</div>
@@ -142,29 +142,30 @@
             @csrf
             @method('PUT')
             <div class="grid">
-                <div class="field"><label>Address *</label><input name="address" value="{{ old('address', $object['address'] ?? '') }}" required></div>
-                <div class="field"><label>City</label><input name="City" value="{{ old('City', $object['City'] ?? '') }}"></div>
-                <div class="field"><label>Contact Person</label><input name="Contact" value="{{ old('Contact', $object['Contact'] ?? '') }}"></div>
+                <div class="field"><label>Aadress *</label><input name="address" value="{{ old('address', $object['address'] ?? '') }}" required></div>
+                <div class="field"><label>Linn</label><input name="City" value="{{ old('City', $object['City'] ?? '') }}"></div>
+                <div class="field"><label>Kontaktisik</label><input name="Contact" value="{{ old('Contact', $object['Contact'] ?? '') }}"></div>
+                <div class="field"><label>Aruannete e-post (mitu komaga)</label><input name="report_emails" value="{{ old('report_emails', $object['report_emails'] ?? '') }}" placeholder="haldur@example.ee, raamatupidaja@example.ee"></div>
                 <div class="field"><label>IMEI *</label><input name="IMEI" value="{{ old('IMEI', $object['IMEI'] ?? '') }}" required></div>
                 <div class="field"><label>IMEI 2</label><input name="IMEI2" value="{{ old('IMEI2', $object['IMEI2'] ?? '') }}"></div>
                 @include('objects._sim-slots')
-                <div class="field"><label>Device Quantity</label><input name="Devqtty" type="number" min="0" value="{{ old('Devqtty', $object['Devqtty'] ?? 0) }}"></div>
-                <div class="field"><label>Radio Device Quantity</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', $object['RadioDevQty'] ?? 0) }}"></div>
-                <div class="field"><label>Main Radio Location</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', $object['MainRadio'] ?? 0) }}"></div>
-                <div class="field"><label>Key Code</label><input name="KeyCode" value="{{ old('KeyCode', $object['KeyCode'] ?? '') }}"></div>
-                <div class="field"><label>Package</label><input name="packet" value="{{ old('packet', $object['packet'] ?? '') }}"></div>
-                <div class="field"><label>Traffic</label><input name="traffic" value="{{ old('traffic', $object['traffic'] ?? '') }}"></div>
-                <div class="field"><label>Call Count</label><input name="callCnt" type="number" min="0" value="{{ old('callCnt', $object['callCnt'] ?? 0) }}"></div>
-                <div class="field"><label>Sum</label><input name="summ" type="number" step="0.01" min="0" value="{{ old('summ', $object['summ'] ?? 0) }}"></div>
-                <div class="field"><label>Latitude</label><input name="lat" type="number" step="0.000001" value="{{ old('lat', $object['lat'] ?? '') }}"></div>
-                <div class="field"><label>Longitude</label><input name="lon" type="number" step="0.000001" value="{{ old('lon', $object['lon'] ?? '') }}"></div>
-                <div class="field span-2"><label>Installer</label>
+                <div class="field"><label>Seadmete arv</label><input name="Devqtty" type="number" min="0" value="{{ old('Devqtty', $object['Devqtty'] ?? 0) }}"></div>
+                <div class="field"><label>Raadioseadmete arv</label><input name="RadioDevQty" type="number" min="0" value="{{ old('RadioDevQty', $object['RadioDevQty'] ?? 0) }}"></div>
+                <div class="field"><label>Peamise raadio asukoht</label><input name="MainRadio" type="number" min="0" value="{{ old('MainRadio', $object['MainRadio'] ?? 0) }}"></div>
+                <div class="field"><label>Uksekood</label><input name="KeyCode" value="{{ old('KeyCode', $object['KeyCode'] ?? '') }}"></div>
+                <div class="field"><label>Pakett</label><input name="packet" value="{{ old('packet', $object['packet'] ?? '') }}"></div>
+                <div class="field"><label>Liiklus</label><input name="traffic" value="{{ old('traffic', $object['traffic'] ?? '') }}"></div>
+                <div class="field"><label>Kõnede arv</label><input name="callCnt" type="number" min="0" value="{{ old('callCnt', $object['callCnt'] ?? 0) }}"></div>
+                <div class="field"><label>Summa</label><input name="summ" type="number" step="0.01" min="0" value="{{ old('summ', $object['summ'] ?? 0) }}"></div>
+                <div class="field"><label>Laiuskraad</label><input name="lat" type="number" step="0.000001" value="{{ old('lat', $object['lat'] ?? '') }}"></div>
+                <div class="field"><label>Pikkuskraad</label><input name="lon" type="number" step="0.000001" value="{{ old('lon', $object['lon'] ?? '') }}"></div>
+                <div class="field span-2"><label>Paigaldaja</label>
                     <div class="radio-row">
                         <label><input type="radio" name="Company" value="1" {{ old('Company', $object['Company'] ?? 1) == 1 ? 'checked' : '' }}> AGR</label>
                         <label><input type="radio" name="Company" value="2" {{ old('Company', $object['Company'] ?? 1) == 2 ? 'checked' : '' }}> Prem</label>
                     </div>
                 </div>
-                <div class="field span-2"><label>System</label>
+                <div class="field span-2"><label>Süsteem</label>
                     <div class="radio-row">
                         <label><input type="radio" name="dtype" value="1" {{ old('dtype', $object['dtype'] ?? 1) == 1 ? 'checked' : '' }}> Apator</label>
                         <label><input type="radio" name="dtype" value="2" {{ old('dtype', $object['dtype'] ?? 1) == 2 ? 'checked' : '' }}> Siemens</label>
@@ -172,7 +173,7 @@
                         <label><input type="radio" name="dtype" value="4" {{ old('dtype', $object['dtype'] ?? 1) == 4 ? 'checked' : '' }}> LoRa</label>
                     </div>
                 </div>
-                <div class="field span-2"><label>Manager</label>
+                <div class="field span-2"><label>Haldur</label>
                     <div class="radio-row">
                         <label><input type="radio" name="manager" value="1" {{ old('manager', $object['manager'] ?? 1) == 1 ? 'checked' : '' }}> IRA</label>
                         <label><input type="radio" name="manager" value="2" {{ old('manager', $object['manager'] ?? 1) == 2 ? 'checked' : '' }}> KAT</label>
@@ -180,20 +181,20 @@
                         <label><input type="radio" name="manager" value="4" {{ old('manager', $object['manager'] ?? 1) == 4 ? 'checked' : '' }}> NAT</label>
                     </div>
                 </div>
-                <div class="field"><label>Status</label>
+                <div class="field"><label>Staatus</label>
                     <select name="status">
-                        <option value="1" {{ old('status', $object['status'] ?? 1) == 1 ? 'selected' : '' }}>Active</option>
-                        <option value="2" {{ old('status', $object['status'] ?? 1) == 2 ? 'selected' : '' }}>Inactive</option>
+                        <option value="1" {{ old('status', $object['status'] ?? 1) == 1 ? 'selected' : '' }}>Aktiivne</option>
+                        <option value="2" {{ old('status', $object['status'] ?? 1) == 2 ? 'selected' : '' }}>Mitteaktiivne</option>
                     </select>
                 </div>
-                <div class="field"><label class="checkbox-label"><input type="checkbox" name="saveHval" value="1" {{ old('saveHval', $object['saveHval'] ?? false) ? 'checked' : '' }}> Save month statistics</label></div>
-                <div class="field span-2"><label>Description</label><textarea name="Description">{{ old('Description', $object['Description'] ?? '') }}</textarea></div>
-                <div class="field span-2"><label>Second description</label><textarea name="Description2">{{ old('Description2', $object['Description2'] ?? '') }}</textarea></div>
+                <div class="field"><label class="checkbox-label"><input type="checkbox" name="saveHval" value="1" {{ old('saveHval', $object['saveHval'] ?? false) ? 'checked' : '' }}> Salvesta kuu statistika</label></div>
+                <div class="field span-2"><label>Kirjeldus</label><textarea name="Description">{{ old('Description', $object['Description'] ?? '') }}</textarea></div>
+                <div class="field span-2"><label>Lisakirjeldus</label><textarea name="Description2">{{ old('Description2', $object['Description2'] ?? '') }}</textarea></div>
             </div>
 
             <div class="actions">
-                <button class="btn btn-primary" type="submit">💾 Save Changes</button>
-                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">← Cancel</a>
+                <button class="btn btn-primary" type="submit">💾 Salvesta</button>
+                <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">← Tühista</a>
             </div>
         </form>
     </div>

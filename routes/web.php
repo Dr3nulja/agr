@@ -11,6 +11,7 @@ use App\Http\Controllers\ObjectTaskController;
 use App\Http\Controllers\MobileReportController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\SimCardController;
+use App\Http\Controllers\ReadingsController;
 use App\Http\Controllers\Api\MobileAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,21 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('objects.edit')->middleware('admin.only');
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('objects.update')->middleware('admin.only');
     Route::post('/objects/{object}/check', [ObjectController::class, 'check'])->name('objects.check')->middleware('admin.only');
+    Route::post('/objects/{object}/uncheck', [ObjectController::class, 'uncheck'])->name('objects.uncheck')->middleware('admin.only');
+    Route::post('/objects/{object}/send-report', [ObjectController::class, 'sendReport'])->name('objects.send-report')->middleware('admin.only');
+
+    // Näidud: показания, график, экспорт, ручная правка, фиксация месяца
+    Route::get('/objects/{object}/readings', [ReadingsController::class, 'index'])->name('readings.index');
+    Route::get('/objects/{object}/readings/export.xlsx', [ReadingsController::class, 'xlsx'])->name('readings.xlsx');
+    Route::get('/objects/{object}/readings/print', [ReadingsController::class, 'print'])->name('readings.print');
+    Route::get('/objects/{object}/readings/{devid}', [ReadingsController::class, 'device'])->name('readings.device')->whereNumber('devid');
+    Route::middleware('admin.only')->group(function () {
+        Route::post('/objects/{object}/readings/fix-month', [ReadingsController::class, 'fixMonth'])->name('readings.fix-month');
+        Route::post('/objects/{object}/readings/{devid}/history', [ReadingsController::class, 'storeHistory'])->name('readings.history.store')->whereNumber('devid');
+        Route::put('/objects/{object}/readings/{devid}/history/{row}', [ReadingsController::class, 'updateHistory'])->name('readings.history.update')->whereNumber(['devid', 'row']);
+        Route::delete('/objects/{object}/readings/{devid}/history/{row}', [ReadingsController::class, 'destroyHistory'])->name('readings.history.destroy')->whereNumber(['devid', 'row']);
+        Route::put('/objects/{object}/readings/{devid}/current', [ReadingsController::class, 'updateCurrent'])->name('readings.current.update')->whereNumber('devid');
+    });
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('objects.destroy')->middleware('admin.only');
     Route::post('/objects/{object}/command', [ObjectsController::class, 'sendCommand'])->name('objects.command')->middleware('admin.only');
     Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('objects.show');

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - AGR')
+@section('title', 'Töölaud - AGR')
 
 @section('extra-styles')
     <style>
@@ -47,9 +47,9 @@
 
 @section('content')
     <div class="card">
-        <h2>📊 Welcome back, {{ $user->name }}!</h2>
+        <h2>📊 Tere, {{ $user->name }}!</h2>
         <p style="color: var(--text-muted); margin: 0;">
-            You are logged in as <strong>{{ $user->login }}</strong>
+            Oled sisse logitud kui <strong>{{ $user->login }}</strong>
             @if($user->role === 1)
                 <span class="badge-admin">ADMIN</span>
             @endif
@@ -57,23 +57,23 @@
     </div>
 
     <div class="card">
-        <h2>📈 Statistics</h2>
+        <h2>📈 Statistika</h2>
         <div class="stats">
             <div class="stat-box">
                 <div class="stat-number">{{ $totalObjects }}</div>
-                <div class="stat-label">Total Objects</div>
+                <div class="stat-label">Objekte kokku</div>
             </div>
             <div class="stat-box tint-good">
                 <div class="stat-number">{{ $activeObjects }}</div>
-                <div class="stat-label">Active</div>
+                <div class="stat-label">Aktiivsed</div>
             </div>
             <div class="stat-box">
                 <div class="stat-number">{{ $inactiveObjects ?? 0 }}</div>
-                <div class="stat-label">Inactive</div>
+                <div class="stat-label">Mitteaktiivsed</div>
             </div>
             <div class="stat-box tint-warn">
                 <div class="stat-number">{{ $offlineObjects }}</div>
-                <div class="stat-label">Offline</div>
+                <div class="stat-label">Ühenduseta</div>
             </div>
         </div>
     </div>
