@@ -83,6 +83,7 @@ class ExportController extends Controller
         foreach ($data as $record) {
             $sheet->setCellValue('A' . $i, $record->location);
             $sheet->setCellValue('B' . $i, $record->devid);
+            ReportBuilder::colorDevice($sheet, 'B' . $i, (int) $record->devtype);
             $sheet->setCellValue('C' . $i, (int) $record->devtype === 1 ? 'külm' : 'soe');
 
             $scale = 1000;
@@ -110,6 +111,7 @@ class ExportController extends Controller
         $sheet->getStyle('A5:B' . ($i - 1))->getFont()->setBold(true);
         $sheet->getStyle('A5:B' . ($i - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A5:E' . ($i - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        ReportBuilder::setWidths($sheet, ['A' => 9, 'B' => 16, 'C' => 9, 'D' => 13, 'E' => 12]);
 
         $fileName = 'Report_Month_Start_' . preg_replace('/[^A-Za-z0-9_\-]+/', '_', $address);
         $writer = new Xlsx($spreadsheet);

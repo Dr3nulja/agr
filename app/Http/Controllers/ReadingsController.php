@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AgrObject;
+use App\Models\LeakAlert;
 use App\Services\ReadingsService;
 use App\Services\ReportBuilder;
 use Illuminate\Http\Request;
@@ -56,11 +57,13 @@ class ReadingsController extends Controller
     {
         $object = AgrObject::findOrFail($object);
         $device = $this->findDevice($object, $devid);
+        $history = $this->readings->history((int) $object->id, $device);
 
         return view('readings.device', [
             'object' => $object,
             'device' => $device,
-            'history' => $this->readings->history((int) $object->id, $device),
+            'history' => $history,
+            'problems' => $this->withLeaks(ReadingsService::problems($device, $history), (int) $object->id, $devid),
             'corrections' => $this->readings->corrections((int) $object->id, $devid),
             'back' => $request->query('back'),
         ]);
@@ -183,11 +186,29 @@ class ReadingsController extends Controller
             'devices' => $devices,
             'periods' => $periods,
             'monthly' => $monthly,
-            'totals' => ReadingsService::totals($devices, $monthly, $periods),
             'locations' => $this->readings->locations($objectId),
             'hasTables' => $this->readings->hasTables($objectId),
             'title' => $title,
         ];
+    }
+
+    /**
+     * Утечки прибора (leak_alerts) — в общий список ошибок, новые сверху
+     */
+    private function withLeaks(array $problems, int $objectId, int $devid): array
+    {
+        $leaks = LeakAlert::where('object_id', $objectId)->where('devid', $devid)->latest('day')->limit(20)->get();
+
+        foreach ($leaks as $leak) {
+            $problems[] = [
+                'date' => $leak->to_date->format('Y-m-d H:i:s'),
+                'text' => sprintf('Võimalik leke: %s m³ ööpäevas%s', number_format($leak->consumption, 3, '.', ' '), $leak->resolved_at ? ' (lahendatud)' : ''),
+            ];
+        }
+
+        usort($problems, fn ($a, $b) => strcmp((string) $b['date'], (string) $a['date']));
+
+        return $problems;
     }
 
     private function findDevice(AgrObject $object, int $devid): array

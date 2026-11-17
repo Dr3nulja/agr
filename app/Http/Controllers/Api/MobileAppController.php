@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AgrObject;
+use App\Models\MaintenanceRequest;
 use App\Models\MobileReport;
 use App\Models\ObjectTask;
 use Illuminate\Http\Request;
@@ -107,6 +108,44 @@ class MobileAppController extends Controller
         });
 
         return response()->json(['status' => 'ok', 'id' => $report->id]);
+    }
+
+    /**
+     * Кнопка «Hooldus» в приложении: вода или тепло + адрес вручную.
+     */
+    public function insertMaintenance(Request $request)
+    {
+        $validator = validator($request->all(), [
+            'kind' => ['required', Rule::in(array_keys(MaintenanceRequest::KINDS))],
+            'address' => ['required', 'string', 'max:255'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+            'installer' => ['nullable', 'string', 'max:100'],
+            'client_uuid' => ['nullable', 'string', 'max:64'],
+        ], [
+            'kind.*' => 'Vali vesi või soojus',
+            'address.required' => 'Sisesta aadress',
+            'address.max' => 'Aadress on liiga pikk',
+            'comment.max' => 'Kommentaar on liiga pikk',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
+        }
+
+        $clientUuid = $request->input('client_uuid') ?: null;
+        if ($clientUuid && $existing = MaintenanceRequest::where('client_uuid', $clientUuid)->first()) {
+            return response()->json(['status' => 'ok', 'id' => $existing->id, 'duplicate' => true]);
+        }
+
+        $maintenance = MaintenanceRequest::create([
+            'kind' => $request->input('kind'),
+            'address' => trim($request->input('address')),
+            'comment' => $request->input('comment') ?: null,
+            'installer' => $request->input('installer') ?: null,
+            'client_uuid' => $clientUuid,
+        ]);
+
+        return response()->json(['status' => 'ok', 'id' => $maintenance->id]);
     }
 
     private function storeImage(?string $base64, int $reportId, string $name): ?string

@@ -11,6 +11,8 @@ use App\Http\Controllers\ObjectTaskController;
 use App\Http\Controllers\MobileReportController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\SimCardController;
+use App\Http\Controllers\LeakController;
+use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\ReadingsController;
 use App\Http\Controllers\Api\MobileAppController;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +91,16 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::get('/installations/{object}/print', [InstallationController::class, 'print'])->name('installations.print');
     Route::get('/installations/{object}/export.xlsx', [InstallationController::class, 'xlsx'])->name('installations.xlsx');
 
+    // Hooldus: заявки на обслуживание из приложения
+    Route::get('/hooldus', [MaintenanceController::class, 'index'])->name('maintenance.index');
+    Route::post('/hooldus/{maintenance}/done', [MaintenanceController::class, 'toggleDone'])->name('maintenance.done')->middleware('admin.only');
+    Route::delete('/hooldus/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy')->middleware('admin.only');
+
+    // Lekked: водомеры с расходом ≥ 5 м³ в сутки (команда leaks:check)
+    Route::get('/lekked', [LeakController::class, 'index'])->name('leaks.index');
+    Route::post('/lekked/check', [LeakController::class, 'check'])->name('leaks.check')->middleware('admin.only');
+    Route::post('/lekked/{leak}/resolve', [LeakController::class, 'resolve'])->name('leaks.resolve')->middleware('admin.only');
+
     // Регистр SIM-карт
     Route::get('/sims', [SimCardController::class, 'index'])->name('sims.index');
     Route::middleware('admin.only')->group(function () {
@@ -113,6 +125,7 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
 // Тот же путь, что на боевом сервере, чтобы приложению менять только адрес
 Route::get('/get_house_list', [MobileAppController::class, 'houseList'])->name('mobile.house_list');
 Route::post('/insert_dev_data', [MobileAppController::class, 'insertDevData'])->name('mobile.insert_dev_data');
+Route::post('/insert_hooldus', [MobileAppController::class, 'insertMaintenance'])->name('mobile.insert_hooldus');
 
 // ============ JSON API ============
 Route::prefix('api')->group(function () {

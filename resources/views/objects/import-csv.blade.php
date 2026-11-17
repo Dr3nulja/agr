@@ -60,5 +60,5 @@
         </form>
     </div>
 
-    <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">← Tagasi</a>
+    <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}" data-back>← Tagasi</a>
 @endsection

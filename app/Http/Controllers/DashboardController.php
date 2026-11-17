@@ -36,6 +36,7 @@ class DashboardController extends Controller
             'tasksCount' => ObjectTask::count(),
             'taskObjects' => ObjectTaskController::objectOptions(),
             'offlineObjects' => $offlineObjects,
+            'openLeaks' => \App\Models\LeakAlert::open()->count(),
         ]);
     }
 

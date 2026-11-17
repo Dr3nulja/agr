@@ -68,7 +68,7 @@
                 <a href="{{ route('installations.xlsx', ['object' => $object->id] + $query) }}" class="inst-btn">📥 Excel</a>
                 <a href="{{ route('installations.xlsx', ['object' => $object->id, 'photos' => 1] + $query) }}" class="inst-btn">📥 Excel fotodega</a>
                 <a href="{{ route('objects.show', $object->id) }}" class="inst-btn">Objekti leht</a>
-                <a href="{{ route('installations.index') }}" class="inst-btn">← Tagasi</a>
+                <a href="{{ route('installations.index') }}" class="inst-btn" data-back>← Tagasi</a>
             </div>
         </div>
 

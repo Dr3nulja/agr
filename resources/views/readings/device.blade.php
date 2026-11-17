@@ -23,6 +23,12 @@
         .rd-table th { font-weight: 500; color: var(--text-muted); }
         .rd-table .rd-input { padding: 5px 8px; }
         .rd-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: oklch(0.95 0.05 65); color: oklch(0.45 0.12 65); }
+        .rd-tone-cold { color: oklch(0.5 0.17 250); }
+        .rd-tone-hot { color: oklch(0.55 0.19 25); }
+        .rd-tone-heat { color: oklch(0.58 0.15 60); }
+        .rd-ok { color: oklch(0.45 0.12 155); }
+        .rd-problem { color: oklch(0.5 0.17 30); }
+        .rd-history { max-height: 640px; overflow-y: auto; }
         @media (max-width: 900px) { .rd-grid { grid-template-columns: 1fr; } }
     </style>
 @endsection
@@ -33,16 +39,52 @@
     @php
         $isAdmin = session('user')->role == 1;
         $backUrl = $back && str_starts_with($back, url('/')) ? $back : route('readings.index', $object->id);
+        $tone = \App\Services\ReadingsService::tone($device['devtype']);
+        $toneColor = ['cold' => '#3b6fe0', 'hot' => '#d9443a', 'heat' => '#e08a2c'][$tone] ?? '#6b7080';
+        $unit = $device['kind'] === \App\Services\ReadingsService::KIND_WATER ? 'm³' : 'ühikut';
         $actionLabels = ['history_add' => 'Lisatud näit', 'history_edit' => 'Muudetud näit', 'history_delete' => 'Kustutatud näit', 'current_edit' => 'Muudetud praegune'];
     @endphp
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
             <div>
-                <h2>Seade <span class="rd-mono">{{ $device['devid'] }}</span></h2>
-                <div class="rd-muted">{{ $object->address }}, {{ $object->City }} · korter {{ $device['location'] ?: '—' }} · {{ $device['type_label'] }}</div>
+                <h2>Seade <span class="rd-mono rd-tone-{{ $tone }}">{{ $device['devid'] }}</span></h2>
+                <div class="rd-muted">{{ $object->address }}, {{ $object->City }} · korter {{ $device['location'] ?: '—' }} · <span class="rd-tone-{{ $tone }}">{{ $device['type_label'] }}</span></div>
             </div>
-            <a href="{{ $backUrl }}" class="rd-btn">← Näidud</a>
+            <a href="{{ $backUrl }}" class="rd-btn" data-back>← Näidud</a>
+        </div>
+    </div>
+
+    <div class="rd-grid">
+        <div class="card">
+            <h3>📈 Näitude graafik</h3>
+            @include('partials.line-chart', [
+                'points' => array_map(fn ($row) => [$row['date'], $row['value']], array_reverse($history)),
+                'unit' => $unit,
+                'color' => $toneColor,
+                'label' => 'Seadme ' . $device['devid'] . ' näidud',
+            ])
+            @if(count($history) >= 200)
+                <p class="rd-muted" style="margin: 8px 0 0;">Viimased 200 näitu.</p>
+            @endif
+        </div>
+
+        <div class="card">
+            <h3>⚠️ Vead ({{ count($problems) }})</h3>
+            @if($problems === [])
+                <div class="rd-ok">✓ Vigu pole</div>
+            @else
+                <table class="rd-table">
+                    <tbody>
+                        @foreach($problems as $problem)
+                            <tr>
+                                <td class="rd-muted" style="white-space: nowrap;">{{ $problem['date'] ? date('d.m.Y H:i', strtotime($problem['date'])) : '—' }}</td>
+                                <td class="rd-problem">{{ $problem['text'] }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
         </div>
     </div>
 
@@ -108,10 +150,11 @@
         </div>
 
         <div class="card">
-            <h3>Ajalugu ({{ count($history) }}{{ count($history) >= 200 ? ', viimased' : '' }})</h3>
+            <h3>🕘 Näitude ajalugu ({{ count($history) }}{{ count($history) >= 200 ? ', viimased' : '' }})</h3>
             @if($history === [])
                 <div class="rd-muted">Ajalugu puudub.</div>
             @else
+                <div class="rd-history">
                 <table class="rd-table">
                     <thead><tr><th>Kuupäev</th><th>Näit</th><th></th></tr></thead>
                     <tbody>
@@ -144,6 +187,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             @endif
         </div>
     </div>

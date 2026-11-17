@@ -18,16 +18,16 @@
         .rd-field { display: flex; flex-direction: column; gap: 4px; }
         .rd-label { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
         .rd-input { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
-        .rd-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
         .rd-table-wrap { overflow-x: auto; }
         .rd-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
         .rd-table th, .rd-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
         .rd-table th { background: oklch(0.97 0.006 270); text-align: left; font-weight: 500; position: sticky; top: 0; }
         .rd-table td.num, .rd-table th.num { text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
         .rd-table tbody tr:hover { background: oklch(0.97 0.006 270); }
-        .rd-type-water { color: oklch(0.5 0.17 250); }
-        .rd-type-hot { color: oklch(0.55 0.19 25); }
-        .rd-type-heat { color: oklch(0.55 0.15 60); }
+        .rd-devid { font-weight: 600; }
+        .rd-tone-cold { color: oklch(0.5 0.17 250); }
+        .rd-tone-hot { color: oklch(0.55 0.19 25); }
+        .rd-tone-heat { color: oklch(0.58 0.15 60); }
         .rd-empty { padding: 20px; text-align: center; background: var(--bg); border: 2px dashed var(--border); border-radius: 8px; color: var(--text-muted); }
         .rd-snapshot { padding: 10px 14px; border-radius: 10px; background: oklch(0.95 0.04 254); color: oklch(0.4 0.12 254); margin-bottom: 16px; }
         .rd-fixed { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -42,15 +42,13 @@
     @php
         $isAdmin = session('user')->role == 1;
         $query = array_filter($filters, fn ($value) => $value !== null && $value !== '');
-        $units = [\App\Services\ReadingsService::KIND_WATER => 'm³', \App\Services\ReadingsService::KIND_HEAT => 'ühikut'];
-        $colors = [\App\Services\ReadingsService::KIND_WATER => '#3b6fe0', \App\Services\ReadingsService::KIND_HEAT => '#e08a2c'];
     @endphp
 
     <div class="card">
         <div class="rd-head">
             <div>
                 <h2>📈 Näidud — {{ $object->address }}</h2>
-                <div class="rd-muted">{{ $object->City }} · veemõõtjate ja jaoturite näidud ning kulu kuude kaupa</div>
+                <div class="rd-muted">{{ $object->City }} · veemõõtjate ja jaoturite näidud kuude kaupa</div>
             </div>
             <div class="rd-actions">
                 <a href="{{ route('readings.xlsx', [$object->id] + $query) }}" class="rd-btn">📥 Excel</a>
@@ -105,28 +103,14 @@
         <div class="card"><div class="rd-empty">Objektil pole seadmete tabeleid (object_{{ $object->id }}, lastdata_{{ $object->id }}, mlog_{{ $object->id }}).</div></div>
     @else
         <div class="card">
-            <h3>Kulu kuude kaupa</h3>
-            @if($totals === [])
-                <div class="rd-empty">Valitud filtritega seadmeid pole.</div>
-            @else
-                <div class="rd-charts">
-                    @foreach($totals as $kind => $series)
-                        <div>
-                            <div class="rd-muted" style="margin-bottom: 6px;">{{ \App\Services\ReadingsService::KINDS[$kind] }}{{ $filters['location'] !== '' ? ' · korter ' . $filters['location'] : '' }}</div>
-                            @include('readings._chart', ['series' => $series, 'unit' => $units[$kind], 'color' => $colors[$kind], 'label' => \App\Services\ReadingsService::KINDS[$kind]])
-                        </div>
-                    @endforeach
-                </div>
-                <p class="rd-muted" style="margin: 10px 0 0;">Kuu kulu = kuu viimane näit − eelmise kuu viimane näit (ajaloost mlog_{{ $object->id }}).</p>
-            @endif
-        </div>
-
-        <div class="card">
             @if($filters['snapshot'])
-                <div class="rd-snapshot">Näidatakse {{ $filters['snapshot'] }} fikseeritud näite. Kulu kuude kaupa arvutatakse ikka ajaloost.</div>
+                <div class="rd-snapshot">Näidatakse {{ $filters['snapshot'] }} fikseeritud näite. Kuude näidud võetakse ikka ajaloost.</div>
             @endif
             <div class="rd-head" style="margin-bottom: 12px;">
-                <h3 style="margin: 0;">Seadmed ({{ count($devices) }})</h3>
+                <div>
+                    <h3 style="margin: 0 0 4px;">Seadmed ({{ count($devices) }})</h3>
+                    <div class="rd-muted">Kuu veerus — näit (maht) kuu lõpus. <span class="rd-tone-cold">külm vesi</span> · <span class="rd-tone-hot">soe vesi</span> · <span class="rd-tone-heat">jaotur</span></div>
+                </div>
                 <input id="rdSearch" type="search" class="rd-input" placeholder="🔍 Korter / seadme nr" style="width: 220px;">
             </div>
 
@@ -137,12 +121,12 @@
                     <table class="rd-table">
                         <thead>
                             <tr>
+                                @php $periodsDesc = collect($periods)->reverse()->values(); // в таблице — от текущего месяца к прошлым @endphp
                                 <th>Korter</th>
                                 <th>Seadme nr</th>
-                                <th>Tüüp</th>
                                 <th class="num">Viimane näit</th>
                                 <th>Kuupäev</th>
-                                @foreach($periods as $period)
+                                @foreach($periodsDesc as $period)
                                     <th class="num">{{ \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $period . '-01')->format('m.Y') }}</th>
                                 @endforeach
                                 <th></th>
@@ -150,18 +134,14 @@
                         </thead>
                         <tbody id="rdBody">
                             @foreach($devices as $device)
-                                @php
-                                    $typeClass = $device['kind'] === 'heat' ? 'rd-type-heat' : (str_starts_with($device['type_label'], 'soe') ? 'rd-type-hot' : 'rd-type-water');
-                                @endphp
                                 <tr>
                                     <td>{{ $device['location'] ?: '—' }}</td>
-                                    <td class="rd-mono">{{ $device['devid'] }}</td>
-                                    <td class="{{ $typeClass }}">{{ $device['type_label'] }}</td>
+                                    <td class="rd-mono rd-devid rd-tone-{{ \App\Services\ReadingsService::tone($device['devtype']) }}" title="{{ $device['type_label'] }}">{{ $device['devid'] }}@if($device['error'] ?? null) <span title="Viga {{ $device['error'] }}">⚠️</span>@endif</td>
                                     <td class="num">{{ $device['value'] !== null ? number_format($device['value'], 3, '.', ' ') : '—' }}</td>
                                     <td>{{ $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '—' }}</td>
-                                    @foreach($periods as $period)
-                                        @php $consumption = $monthly[$device['devid']][$period]['consumption'] ?? null; @endphp
-                                        <td class="num">{{ $consumption !== null ? number_format($consumption, 3, '.', ' ') : '·' }}</td>
+                                    @foreach($periodsDesc as $period)
+                                        @php $reading = $monthly[$device['devid']][$period]['reading'] ?? null; @endphp
+                                        <td class="num">{{ $reading !== null ? number_format($reading, 3, '.', ' ') : '·' }}</td>
                                     @endforeach
                                     <td><a href="{{ route('readings.device', [$object->id, $device['devid'], 'back' => request()->fullUrl()]) }}" class="rd-btn" style="padding: 4px 12px; font-size: 0.8rem;">{{ $isAdmin ? '✏️ Ajalugu' : 'Ajalugu' }}</a></td>
                                 </tr>

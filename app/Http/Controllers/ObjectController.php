@@ -74,7 +74,7 @@ class ObjectController extends Controller
             });
         }
 
-        $objects = $query->orderBy('address')->paginate(15)->withQueryString();
+        $objects = $query->orderBy('address')->paginate(30)->withQueryString();
 
         foreach ($objects as $object) {
             $object->selected = $object->selDate ? 'table-success' : '';
@@ -82,6 +82,14 @@ class ObjectController extends Controller
             $object->errors = $errorCounts['errors'] ?? 0;
             $object->water_errors = $errorCounts['water_errors'] ?? 0;
             $object->heat_errors = $errorCounts['heat_errors'] ?? 0;
+        }
+
+        // Подгрузка при прокрутке: только строки таблицы и адрес следующей порции
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('objects._rows', ['objects' => $objects])->render(),
+                'next' => $objects->nextPageUrl(),
+            ]);
         }
 
         $companyOptions = AgrObject::query()
@@ -252,7 +260,10 @@ class ObjectController extends Controller
             'object' => $item->toArray(),
             'devices' => $devices,
             'installData' => $item->installData->toArray(),
-            'csqLogs' => $item->csqLogs->toArray(),
+            // В боевой таблице csq время — `date`, в созданной миграцией — `created_at`; новые сверху
+            'csqLogs' => $item->csqLogs
+                ->map(fn ($row) => ['date' => (string) ($row->getAttribute('date') ?? $row->getAttribute('created_at') ?? ''), 'csq' => (int) $row->csq])
+                ->sortByDesc('date')->values()->all(),
             'tasks' => $item->tasks->sortBy('id')->values(),
             'simCards' => $item->simCards->keyBy('slot'),
             'mobileReports' => $item->mobileReports()->latest('id')->get(),
@@ -335,7 +346,7 @@ class ObjectController extends Controller
     /**
      * Поставить следующий чек: вода → тепло (или сразу «сдано всё»)
      */
-    public function check($item, ObjectCheckService $checks)
+    public function check(Request $request, $item, ObjectCheckService $checks)
     {
         $item = AgrObject::findOrFail($item);
         $step = $checks->check($item);
@@ -346,19 +357,20 @@ class ObjectController extends Controller
 
         $this->logAction(sprintf('Checked object #%d (IMEI: %s): %s', $item->id, $item->IMEI, $step));
 
-        return redirect()->route('objects.show', $item)->with('success', self::checkMessage($item));
+        // Из меню в списке объектов — возвращаемся в список, иначе — на страницу объекта
+        return self::afterCheck($request, $item)->with('success', $item->address . ': ' . self::checkMessage($item));
     }
 
     /**
      * Снять чеки
      */
-    public function uncheck($item, ObjectCheckService $checks)
+    public function uncheck(Request $request, $item, ObjectCheckService $checks)
     {
         $item = AgrObject::findOrFail($item);
         $checks->reset($item);
         $this->logAction(sprintf('Unchecked object #%d (IMEI: %s)', $item->id, $item->IMEI));
 
-        return redirect()->route('objects.show', $item)->with('success', 'Märked eemaldatud');
+        return self::afterCheck($request, $item)->with('success', $item->address . ': märked eemaldatud');
     }
 
     /**
@@ -407,6 +419,11 @@ class ObjectController extends Controller
 
         return redirect()->route('objects.show', $item)
             ->with('success', sprintf('Aruanne saadetud: %s. %s', implode(', ', $emails), self::checkMessage($item)));
+    }
+
+    private static function afterCheck(Request $request, AgrObject $item)
+    {
+        return $request->input('from') === 'list' ? back() : redirect()->route('objects.show', $item);
     }
 
     private static function checkMessage(AgrObject $item): string

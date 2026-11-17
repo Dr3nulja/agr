@@ -16,8 +16,10 @@
         .head img { max-height: 48px; max-width: 180px; }
         h1 { font-size: 15pt; margin: 0 0 2px; }
         .muted { color: #666; }
-        .charts { display: flex; gap: 20px; margin: 14px 0; }
-        .charts > div { flex: 1; break-inside: avoid; }
+        .tone-cold { color: #1f4fd8; }
+        .tone-hot { color: #d42020; }
+        .tone-heat { color: #c55a11; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ccd; padding: 3px 5px; text-align: left; white-space: nowrap; }
         th { background: #f0f2f8; font-weight: 600; }
@@ -55,31 +57,16 @@
             @endif
         </div>
 
-        @if($totals)
-            <div class="charts">
-                @foreach($totals as $kind => $series)
-                    <div>
-                        <strong>{{ \App\Services\ReadingsService::KINDS[$kind] }}</strong>
-                        @include('readings._chart', [
-                            'series' => $series,
-                            'unit' => $kind === \App\Services\ReadingsService::KIND_WATER ? 'm³' : 'ühikut',
-                            'color' => $kind === \App\Services\ReadingsService::KIND_WATER ? '#3b6fe0' : '#e08a2c',
-                            'label' => \App\Services\ReadingsService::KINDS[$kind],
-                        ])
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
+        @php $periodsDesc = array_reverse($periods); @endphp
+        <p class="muted" style="margin: 12px 0 0;">Kuu veerus — näit (maht) kuu lõpus. Seadme nr värv: <span class="tone-cold">külm vesi</span>, <span class="tone-hot">soe vesi</span>, <span class="tone-heat">jaotur</span>.</p>
         <table>
             <thead>
                 <tr>
                     <th>Korter</th>
                     <th>Seadme nr</th>
-                    <th>Tüüp</th>
                     <th class="num">Viimane näit</th>
                     <th>Kuupäev</th>
-                    @foreach($periods as $period)
+                    @foreach($periodsDesc as $period)
                         <th class="num">{{ \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $period . '-01')->format('m.y') }}</th>
                     @endforeach
                 </tr>
@@ -88,17 +75,16 @@
                 @forelse($devices as $device)
                     <tr>
                         <td>{{ $device['location'] ?: '—' }}</td>
-                        <td>{{ $device['devid'] }}</td>
-                        <td>{{ $device['type_label'] }}</td>
+                        <td class="tone-{{ \App\Services\ReadingsService::tone($device['devtype']) }}"><strong>{{ $device['devid'] }}</strong></td>
                         <td class="num">{{ $device['value'] !== null ? number_format($device['value'], 3, '.', ' ') : '—' }}</td>
                         <td>{{ $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '—' }}</td>
-                        @foreach($periods as $period)
-                            @php $consumption = $monthly[$device['devid']][$period]['consumption'] ?? null; @endphp
-                            <td class="num">{{ $consumption !== null ? number_format($consumption, 3, '.', ' ') : '' }}</td>
+                        @foreach($periodsDesc as $period)
+                            @php $reading = $monthly[$device['devid']][$period]['reading'] ?? null; @endphp
+                            <td class="num">{{ $reading !== null ? number_format($reading, 3, '.', ' ') : '' }}</td>
                         @endforeach
                     </tr>
                 @empty
-                    <tr><td colspan="{{ 5 + count($periods) }}" class="muted">Seadmeid pole</td></tr>
+                    <tr><td colspan="{{ 4 + count($periods) }}" class="muted">Seadmeid pole</td></tr>
                 @endforelse
             </tbody>
         </table>

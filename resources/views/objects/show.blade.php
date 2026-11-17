@@ -120,8 +120,14 @@
             background: rgba(15, 23, 42, 0.04);
         }
 
-        .row-error {
-            background: rgba(248, 113, 113, 0.1);
+        /* Номер прибора окрашен по типу: külm vesi — синий, soe vesi — красный, jaotur — оранжевый */
+        .device-id.type-cold { color: oklch(0.5 0.17 250); }
+        .device-id.type-hot { color: oklch(0.55 0.2 25); }
+        .device-id.type-heat { color: oklch(0.6 0.15 60); }
+
+        .device-more {
+            text-align: center;
+            margin-top: 14px;
         }
 
         .device-id {
@@ -189,6 +195,70 @@
             color: white;
         }
 
+        /* Сворачиваемые блоки: стрелка справа сверху, состояние запоминается */
+        .fold-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .fold-title {
+            margin: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .fold-extra {
+            margin-left: auto;
+            font-size: 0.9rem;
+        }
+
+        .fold-btn {
+            margin-left: auto;
+            width: 34px;
+            height: 34px;
+            flex: none;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .fold-extra + .fold-btn {
+            margin-left: 0;
+        }
+
+        .fold-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .fold-body {
+            margin-top: 16px;
+        }
+
+        .fold.is-closed .fold-body {
+            display: none;
+        }
+
+        .fold.is-closed .fold-btn {
+            transform: rotate(-90deg);
+        }
+
+        .device-id a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .device-id a:hover {
+            text-decoration: underline;
+        }
+
     </style>
 @endsection
 
@@ -214,7 +284,8 @@
                     <a href="{{ route('objects.export.alokator', $object['id']) }}" class="btn btn-secondary">📥 Jaoturid XLSX</a>
                     <a href="{{ route('objects.export.korto', $object['id']) }}" class="btn btn-secondary">📥 Korto CSV</a>
                 @endif
-                <a href="{{ route('objects.index') }}" class="btn btn-secondary">← Tagasi</a>
+                <button type="button" id="foldAllBtn" class="btn btn-secondary" title="Ava / sulge kõik plokid">⇕ Ava kõik</button>
+                <a href="{{ route('objects.index') }}" class="btn btn-secondary" data-back>← Tagasi</a>
             </div>
         </div>
 
@@ -256,24 +327,28 @@
         </div>
     </div>
 
-    <div class="panel">
+    <section class="panel fold" data-fold="check" data-default-open>
+        <div class="fold-head">
+            <h3 class="section-title fold-title">✅ Andmete esitamine</h3>
+            <div class="fold-extra check-steps">
+                @if($model->selDate)
+                    @if($model->water_checked_at && $model->heat_checked_at)
+                        <span class="check-step is-water">💧 Vesi {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
+                    @endif
+                    <span class="check-step is-all">✓ Kõik esitatud {{ $model->selDate->format('d.m.Y H:i') }}</span>
+                @elseif($model->water_checked_at)
+                    <span class="check-step is-water">💧 Vesi esitatud {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
+                    <span class="check-step">🔥 Soojus ootab</span>
+                @else
+                    <span class="check-step">Esitamata</span>
+                @endif
+            </div>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         <div class="check-panel">
             <div>
-                <h3 class="section-title" style="margin-top: 0;">✅ Andmete esitamine</h3>
-                <div class="check-steps">
-                    @if($model->selDate)
-                        @if($model->water_checked_at && $model->heat_checked_at)
-                            <span class="check-step is-water">💧 Vesi {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
-                        @endif
-                        <span class="check-step is-all">✓ Kõik esitatud {{ $model->selDate->format('d.m.Y H:i') }}</span>
-                    @elseif($model->water_checked_at)
-                        <span class="check-step is-water">💧 Vesi esitatud {{ $model->water_checked_at->format('d.m.Y H:i') }}</span>
-                        <span class="check-step">🔥 Soojus ootab</span>
-                    @else
-                        <span class="check-step">Esitamata</span>
-                    @endif
-                </div>
-                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">
+                <div style="color: var(--text-muted); font-size: 0.85rem;">
                     Aruannete e-post: {{ $model->report_emails ?: '— (lisa objekti muutmise vormis)' }}
                 </div>
             </div>
@@ -304,11 +379,16 @@
                 </div>
             @endif
         </div>
-    </div>
+        </div>
+    </section>
 
     @if(session('user')->role == 1)
-        <div class="panel">
-            <h3 class="section-title">📡 Saada käsk</h3>
+        <section class="panel fold" data-fold="command">
+            <div class="fold-head">
+                <h3 class="section-title fold-title">📡 Saada käsk</h3>
+                <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+            </div>
+            <div class="fold-body">
             <form method="post" action="{{ route('objects.command', $object['id']) }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                 @csrf
                 <select name="command" required style="padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
@@ -318,29 +398,44 @@
                 </select>
                 <button type="submit" class="btn btn-primary">Saada</button>
             </form>
-        </div>
+            </div>
+        </section>
     @endif
 
-    <div class="panel">
-        <h3 class="section-title">📋 Ülesanded rakendusele</h3>
+    <section class="panel fold" data-fold="tasks">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📋 Ülesanded rakendusele ({{ $tasks->count() }})</h3>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         <div style="color: var(--text-muted); margin-bottom: 12px;">
             Paigaldajad näevad neid ülesandeid QRScannerApp'i avaekraanil. Ilma ülesanneteta objekti rakenduses ei kuvata.
         </div>
 
         @include('tasks._list', ['tasks' => $tasks])
         @include('tasks._form')
-    </div>
-
-    <div class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <h3 class="section-title">📱 Aruanded rakendusest ({{ $mobileReports->count() }})</h3>
-            <a href="{{ route('installations.show', $object['id']) }}" class="btn btn-secondary">🔧 Paigalduse ülevaade, PDF / Excel →</a>
         </div>
-        @include('mobile-reports._list')
-    </div>
+    </section>
 
-    <div class="panel">
-        <h3 class="section-title">🧾 Objekti andmed</h3>
+    <section class="panel fold" data-fold="reports">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📱 Aruanded rakendusest ({{ $mobileReports->count() }})</h3>
+            <div class="fold-extra">
+                <a href="{{ route('installations.show', $object['id']) }}" class="btn btn-secondary">🔧 Paigalduse ülevaade, PDF / Excel →</a>
+            </div>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
+        @include('mobile-reports._list')
+        </div>
+    </section>
+
+    <section class="panel fold" data-fold="info">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">🧾 Objekti andmed</h3>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         <div class="info-grid" style="margin-top: 14px; gap: 16px;">
             <div class="info-box">
                 <div class="info-label">Objekti ID</div>
@@ -407,25 +502,39 @@
         <button type="button" id="fullInfoToggle" class="btn btn-secondary" style="margin-top: 16px; padding: 8px 18px; font-size: 0.85rem;" aria-expanded="false" aria-controls="fullInfoPanel">
             ▾ Näita kõiki andmeid
         </button>
-    </div>
-
-    <div class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom: 18px;">
-            <h3 class="section-title" style="margin:0;">Seadmete näidud</h3>
-            <input id="deviceSearch" type="search" placeholder="Otsi ID / korteri / kuupäeva järgi" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); width: 260px;" />
         </div>
+    </section>
+
+    <section class="panel fold" data-fold="devices" data-default-open>
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📟 Seadmete näidud ({{ count($devices) }})</h3>
+            <div class="fold-extra">
+                <input id="deviceSearch" type="search" placeholder="Otsi ID / korteri / kuupäeva järgi" style="padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); width: 260px;" />
+            </div>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
 
         @if(count($devices) > 0)
+            @php
+                // Тип прибора → подпись и цвет (как на странице «Näidud»)
+                $typeInfo = function (int $devtype): array {
+                    $kind = \App\Services\ReadingsService::kindOf($devtype);
+                    $label = \App\Services\ReadingsService::typeLabel($devtype);
+                    $class = $kind === 'heat' ? 'type-heat' : ($kind === 'water' ? (str_starts_with($label, 'soe') ? 'type-hot' : 'type-cold') : 'type-other');
+
+                    return [$label, $class];
+                };
+            @endphp
             <div style="overflow-x:auto;">
                 <table class="device-table" style="width:100%; border-collapse: collapse; min-width: 1020px;">
                     <thead>
                         <tr>
-                            <th>№</th>
+                            <th class="sortable" data-sort="num">№ <span class="sort-mark"></span></th>
                             <th class="sortable" data-sort="location">Korter <span class="sort-mark"></span></th>
                             <th class="sortable" data-sort="devid">ID <span class="sort-mark"></span></th>
-                            <th>Tüüp</th>
-                            <th style="text-align:right;">Eelmine</th>
                             <th style="text-align:right;">Praegune</th>
+                            <th style="text-align:right;">Eelmine</th>
                             <th style="text-align:right;">Vahe</th>
                             <th class="sortable" data-sort="date" title="Sorteeri kuupäeva järgi">Kuupäev <span class="sort-mark"></span></th>
                             <th>Staatus</th>
@@ -437,30 +546,33 @@
                                 $prev = $device['prev_mvalue'] ?? 0;
                                 $curr = $device['mvalue'] ?? 0;
                                 $delta = $curr - $prev;
+                                [$typeLabel, $typeClass] = $typeInfo((int) $device['devtype']);
                             @endphp
-                            <tr class="{{ $device['err_class'] ? 'row-error' : '' }} device-row {{ $loop->iteration > 25 ? 'row-limited' : '' }}" data-date="{{ $device['timestamp'] }}" data-devid="{{ $device['devid'] }}" data-location="{{ $device['location'] }}">
+                            <tr class="device-row" data-num="{{ $loop->iteration }}" data-type="{{ $typeLabel }}" data-date="{{ $device['timestamp'] }}" data-devid="{{ $device['devid'] }}" data-location="{{ $device['location'] }}">
                                 <td class="row-number">{{ $loop->iteration }}</td>
                                 <td>{{ $device['location'] ?? '-' }}</td>
-                                <td class="device-id">{{ $device['devid'] }}</td>
-                                <td>{{ $device['devtype'] === 1 ? 'külm' : ($device['devtype'] === 2 ? 'soe' : ($device['devtype'] === 3 ? 'jaotur' : 'tüüp ' . $device['devtype'])) }}</td>
-                                <td style="text-align:right;">{{ number_format($prev, 3, '.', '') }}</td>
+                                <td class="device-id {{ $typeClass }}" title="{{ $typeLabel }}">
+                                    @if(\App\Services\ReadingsService::kindOf((int) $device['devtype']))
+                                        <a href="{{ route('readings.device', [$object['id'], $device['devid'], 'back' => request()->fullUrl()]) }}" title="{{ $typeLabel }} — graafik, ajalugu, vead">{{ $device['devid'] }}</a>
+                                    @else
+                                        {{ $device['devid'] }}
+                                    @endif
+                                </td>
                                 <td style="text-align:right;">{{ number_format($curr, 3, '.', '') }}</td>
+                                <td style="text-align:right;">{{ number_format($prev, 3, '.', '') }}</td>
                                 <td style="text-align:right;">{{ number_format($delta, 3, '.', '') }}</td>
                                 <td>{{ $device['date'] }}</td>
-                                <td style="text-align:center;">{{ $device['err_class'] ? '⚠️' : 'OK' }}</td>
+                                <td style="text-align:center;" @if($device['err_class']) title="Andmed vanemad kui 3 päeva" @endif>{{ $device['err_class'] ? '⚠️' : 'OK' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
 
-            @if(count($devices) > 25)
-                <div style="text-align:center; margin-top:14px;">
-                    <button type="button" id="deviceShowMoreBtn" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
-                        Näita kõiki {{ count($devices) }} seadet
-                    </button>
-                </div>
-            @endif
+            {{-- Как в списке объектов: следующие строки показываются при прокрутке до конца таблицы --}}
+            <div class="device-more" id="deviceMore" @if(count($devices) <= 25) hidden @endif>
+                <button type="button" id="deviceShowMoreBtn" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">Näita veel</button>
+            </div>
 
             <div class="panel" style="margin-top: 10px;">
                 <button type="button" id="legacyDetailsToggle" class="btn btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">
@@ -500,10 +612,15 @@
         @else
             <div class="placeholder">Objektil pole seadmeid.</div>
         @endif
-    </div>
+        </div>
+    </section>
 
-    <div class="panel">
-        <h3 class="section-title">📌 Kokkuvõte</h3>
+    <section class="panel fold" data-fold="summary">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📌 Kokkuvõte</h3>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         <div class="info-grid">
             <div class="info-box">
                 <div class="info-label">Vee vead</div>
@@ -522,10 +639,15 @@
                 <div class="info-value">{{ count($installData) }}</div>
             </div>
         </div>
-    </div>
+        </div>
+    </section>
 
-    <div class="panel">
-        <h3 class="section-title">📦 Paigaldusandmed</h3>
+    <section class="panel fold" data-fold="install">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📦 Paigaldusandmed ({{ count($installData) }})</h3>
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         @if(count($installData) > 0)
             <div style="overflow-x:auto;">
                 <table class="info-table" style="width:100%; border-collapse: collapse;">
@@ -550,12 +672,31 @@
         @else
             <div class="placeholder">Paigaldusandmeid pole.</div>
         @endif
-    </div>
+        </div>
+    </section>
 
-    <div class="panel">
-        <h3 class="section-title">📶 Signaali tugevus (CSQ)</h3>
+    <section class="panel fold" data-fold="csq">
+        <div class="fold-head">
+            <h3 class="section-title fold-title">📶 Signaali tugevus (CSQ)</h3>
+            @if(count($csqLogs) > 0)
+                <div class="fold-extra" style="color: var(--text-muted);">viimane {{ $csqLogs[0]['csq'] }} · {{ $csqLogs[0]['date'] ?? '' }}</div>
+            @endif
+            <button type="button" class="fold-btn" aria-expanded="true" title="Ava / sulge">▾</button>
+        </div>
+        <div class="fold-body">
         @if(count($csqLogs) > 0)
-            <div style="overflow-x:auto;">
+            {{-- CSQ 0..31: < 10 — плохо, 10–14 — удовлетворительно, 15+ — хорошо --}}
+            @include('partials.line-chart', [
+                'points' => array_reverse(array_map(fn ($row) => [$row['date'], (float) $row['csq']], array_slice(array_filter($csqLogs, fn ($row) => ! empty($row['date']) && (int) $row['csq'] !== 99), 0, 300))),
+                'unit' => 'CSQ',
+                'color' => '#3d6be0',
+                'label' => 'Signaali tugevus',
+                'min' => 0,
+                'max' => 31,
+                'decimals' => 0,
+            ])
+            <button type="button" id="csqTableToggle" class="btn btn-secondary" style="margin-top: 14px; padding: 8px 18px; font-size: 0.85rem;" aria-expanded="false" aria-controls="csqTablePanel">▾ Näita tabelit ({{ count($csqLogs) }})</button>
+            <div id="csqTablePanel" hidden style="overflow-x:auto; max-height: 420px; overflow-y: auto; margin-top: 12px;">
                 <table class="info-table" style="width:100%; border-collapse: collapse;">
                     <thead>
                         <tr>
@@ -576,85 +717,106 @@
         @else
             <div class="placeholder">CSQ kirjeid pole.</div>
         @endif
-    </div>
+        </div>
+    </section>
 @endsection
 
 @section('extra-scripts')
     <script>
+        // Таблица приборов: сортировка по №, Korter, ID, Kuupäev; тип прибора — цветом номера (повторный клик — обратный порядок),
+        // поиск и показ порциями по 25 строк — следующая порция при прокрутке до конца, как в списке объектов.
         const deviceSearch = document.getElementById('deviceSearch');
         const deviceBody = document.getElementById('deviceTableBody');
-        let deviceRows = document.querySelectorAll('#deviceTableBody tr');
+        const deviceMore = document.getElementById('deviceMore');
         const showMoreBtn = document.getElementById('deviceShowMoreBtn');
-        let showingAll = false;
+        const DEVICE_STEP = 25;
+        let deviceLimit = DEVICE_STEP;
+        const sortState = { key: 'num', dir: 1 };
 
-        // Сортировка View Records: клик по Korter / ID / Date, повторный клик — обратный порядок.
-        // После сортировки первые 25 строк — снова видимые, остальные под «Show all».
-        const sortState = { key: null, dir: 1 };
-        document.querySelectorAll('.device-table th.sortable').forEach(th => {
-            th.addEventListener('click', function () {
-                const key = this.dataset.sort;
-                sortState.dir = sortState.key === key ? -sortState.dir : (key === 'date' ? -1 : 1);
-                sortState.key = key;
-
-                const rows = Array.from(deviceBody.rows);
-                rows.sort((a, b) => {
-                    const x = a.dataset[key] || '';
-                    const y = b.dataset[key] || '';
-                    const cmp = key === 'location'
-                        ? x.localeCompare(y, undefined, { numeric: true })
-                        : (Number(x) - Number(y));
-                    return cmp * sortState.dir;
-                });
-                rows.forEach((row, index) => {
-                    deviceBody.appendChild(row);
-                    row.querySelector('.row-number').textContent = index + 1;
-                    row.classList.toggle('row-limited', index >= 25);
-                    row.style.display = (index >= 25 && !showingAll) ? 'none' : '';
-                });
-                deviceRows = deviceBody.querySelectorAll('tr');
-                if (deviceSearch && deviceSearch.value) {
-                    deviceSearch.dispatchEvent(new Event('input'));
-                }
-
-                document.querySelectorAll('.device-table th.sortable .sort-mark').forEach(mark => mark.textContent = '');
-                this.querySelector('.sort-mark').textContent = sortState.dir === 1 ? '▲' : '▼';
+        function renderDevices() {
+            if (!deviceBody) return;
+            const query = deviceSearch ? deviceSearch.value.trim().toLowerCase() : '';
+            const rows = Array.from(deviceBody.rows);
+            let visible = 0;
+            let matched = 0;
+            rows.forEach(row => {
+                const matches = !query || row.textContent.toLowerCase().includes(query);
+                if (matches) matched++;
+                // При поиске показываем все совпадения
+                const show = matches && (query || visible < deviceLimit);
+                if (show) visible++;
+                row.style.display = show ? '' : 'none';
             });
-        });
-
-        // Hide rows past the initial limit via inline style, so later toggles
-        // (which also set inline style) aren't fought by a stylesheet rule.
-        deviceRows.forEach(row => {
-            if (row.classList.contains('row-limited')) {
-                row.style.display = 'none';
+            if (deviceMore) {
+                deviceMore.hidden = !!query || visible >= matched;
+                showMoreBtn.textContent = 'Näita veel (' + visible + ' / ' + matched + ')';
             }
-        });
-
-        if (deviceSearch) {
-            deviceSearch.addEventListener('input', function () {
-                const query = this.value.toLowerCase();
-                const searching = query.length > 0;
-                deviceRows.forEach(row => {
-                    const matches = row.textContent.toLowerCase().includes(query);
-                    if (!matches) {
-                        row.style.display = 'none';
-                        return;
-                    }
-                    // While searching, ignore the row-limited collapse so matches aren't hidden.
-                    row.style.display = (!searching && row.classList.contains('row-limited') && !showingAll) ? 'none' : '';
-                });
-            });
         }
 
-        if (showMoreBtn) {
-            showMoreBtn.addEventListener('click', function () {
-                showingAll = !showingAll;
-                deviceRows.forEach(row => {
-                    if (row.classList.contains('row-limited')) {
-                        row.style.display = showingAll ? '' : 'none';
-                    }
-                });
-                this.textContent = showingAll ? 'Näita vähem' : 'Näita kõiki ' + deviceRows.length + ' seadet';
+        function sortDevices(key, dir) {
+            sortState.key = key;
+            sortState.dir = dir;
+            const rows = Array.from(deviceBody.rows);
+            rows.sort((a, b) => {
+                const x = a.dataset[key] || '';
+                const y = b.dataset[key] || '';
+                const cmp = (key === 'location' || key === 'type')
+                    ? x.localeCompare(y, undefined, { numeric: true })
+                    : (Number(x) - Number(y));
+                // При равенстве — исходный порядок
+                return (cmp || (Number(a.dataset.num) - Number(b.dataset.num))) * (cmp ? dir : 1);
             });
+            rows.forEach(row => deviceBody.appendChild(row));
+            document.querySelectorAll('.device-table th.sortable').forEach(th => {
+                th.querySelector('.sort-mark').textContent = th.dataset.sort === key ? (dir === 1 ? '▲' : '▼') : '';
+            });
+            renderDevices();
+        }
+
+        if (deviceBody) {
+            document.querySelectorAll('.device-table th.sortable').forEach(th => {
+                th.addEventListener('click', function () {
+                    const key = this.dataset.sort;
+                    const dir = sortState.key === key ? -sortState.dir : (key === 'date' ? -1 : 1);
+                    sortDevices(key, dir);
+                });
+            });
+
+            if (deviceSearch) deviceSearch.addEventListener('input', renderDevices);
+
+            const showMore = () => {
+                if (deviceMore.hidden) return;
+                deviceLimit += DEVICE_STEP;
+                renderDevices();
+            };
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', showMore);
+                if ('IntersectionObserver' in window) {
+                    new IntersectionObserver(entries => {
+                        if (entries.some(entry => entry.isIntersecting)) {
+                            showMore();
+                            // Высокий экран: низ всё ещё виден — показываем дальше
+                            requestAnimationFrame(function again() {
+                                if (!deviceMore.hidden && deviceMore.getBoundingClientRect().top < window.innerHeight + 200) {
+                                    showMore();
+                                    requestAnimationFrame(again);
+                                }
+                            });
+                        }
+                    }, { rootMargin: '200px' }).observe(deviceMore);
+                }
+            }
+
+            // При возврате на страницу — та же сортировка и столько же показанных строк
+            window.listState = {
+                save: () => ({ deviceLimit, sortKey: sortState.key, sortDir: sortState.dir }),
+                restore: state => {
+                    if (state.deviceLimit) deviceLimit = state.deviceLimit;
+                    if (state.sortKey) sortDevices(state.sortKey, state.sortDir || 1);
+                },
+            };
+
+            sortDevices('num', 1);
         }
 
         const legacyToggle = document.getElementById('legacyDetailsToggle');
@@ -664,6 +826,59 @@
             legacyToggle.addEventListener('click', function () {
                 const isHidden = legacyPanel.style.display === 'none';
                 legacyPanel.style.display = isHidden ? 'block' : 'none';
+            });
+        }
+
+        // Сворачиваемые блоки. По умолчанию открыты только «Andmete esitamine» и «Seadmete näidud»;
+        // выбор пользователя запоминается в браузере (общий для всех объектов).
+        const folds = Array.from(document.querySelectorAll('.fold'));
+        const foldAllBtn = document.getElementById('foldAllBtn');
+        const foldKey = name => 'objectFold:' + name;
+
+        function setFold(fold, open, remember) {
+            fold.classList.toggle('is-closed', !open);
+            fold.querySelector('.fold-btn').setAttribute('aria-expanded', String(open));
+            if (remember) {
+                try { localStorage.setItem(foldKey(fold.dataset.fold), open ? '1' : '0'); } catch (e) {}
+            }
+        }
+
+        function updateFoldAllBtn() {
+            if (!foldAllBtn) return;
+            const allOpen = folds.every(fold => !fold.classList.contains('is-closed'));
+            foldAllBtn.textContent = allOpen ? '⇕ Sulge kõik' : '⇕ Ava kõik';
+        }
+
+        folds.forEach(fold => {
+            let saved = null;
+            try { saved = localStorage.getItem(foldKey(fold.dataset.fold)); } catch (e) {}
+            setFold(fold, saved === null ? fold.hasAttribute('data-default-open') : saved === '1', false);
+
+            const toggle = () => {
+                setFold(fold, fold.classList.contains('is-closed'), true);
+                updateFoldAllBtn();
+            };
+            fold.querySelector('.fold-btn').addEventListener('click', toggle);
+            fold.querySelector('.fold-title').addEventListener('click', toggle);
+        });
+        updateFoldAllBtn();
+
+        if (foldAllBtn) {
+            foldAllBtn.addEventListener('click', () => {
+                const open = folds.some(fold => fold.classList.contains('is-closed'));
+                folds.forEach(fold => setFold(fold, open, true));
+                updateFoldAllBtn();
+            });
+        }
+
+        const csqTableToggle = document.getElementById('csqTableToggle');
+        const csqTablePanel = document.getElementById('csqTablePanel');
+        if (csqTableToggle && csqTablePanel) {
+            const csqLabel = csqTableToggle.textContent.trim();
+            csqTableToggle.addEventListener('click', function () {
+                csqTablePanel.hidden = !csqTablePanel.hidden;
+                this.setAttribute('aria-expanded', String(!csqTablePanel.hidden));
+                this.textContent = csqTablePanel.hidden ? csqLabel : '▴ Peida tabel';
             });
         }
 

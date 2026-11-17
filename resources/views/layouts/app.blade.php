@@ -224,6 +224,16 @@
                 <a href="{{ route('installations.index') }}" class="navbar-link {{ request()->routeIs('installations.*') ? 'active' : '' }}">
                     Paigaldus
                 </a>
+                <a href="{{ route('maintenance.index') }}" class="navbar-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}">
+                    Hooldus
+                </a>
+                @php($openLeaks = \Illuminate\Support\Facades\Schema::hasTable('leak_alerts') ? \App\Models\LeakAlert::open()->count() : 0)
+                <a href="{{ route('leaks.index') }}" class="navbar-link {{ request()->routeIs('leaks.*') ? 'active' : '' }}">
+                    Lekked
+                    @if($openLeaks)
+                        <span style="display:inline-block; min-width:18px; padding:1px 6px; border-radius:999px; background:oklch(0.6 0.2 25); color:white; font-size:0.72rem; text-align:center;">{{ $openLeaks }}</span>
+                    @endif
+                </a>
                 <a href="{{ route('sims.index') }}" class="navbar-link {{ request()->routeIs('sims.*') ? 'active' : '' }}">
                     SIM-kaardid
                 </a>
@@ -256,5 +266,68 @@
     </div>
 
     @yield('extra-scripts')
+
+    <script>
+        // Возврат к спискам без прыжка наверх: позиция прокрутки (и состояние списка,
+        // если страница задала window.listState) хранится в sessionStorage по адресу страницы.
+        // Восстанавливается при «Назад» в браузере, при обновлении и после кнопок «Tagasi» (data-back).
+        (function () {
+            const here = location.pathname + location.search;
+            const key = 'listpos:' + here;
+            const read = name => { try { return sessionStorage.getItem(name); } catch (e) { return null; } };
+            const write = (name, value) => { try { sessionStorage.setItem(name, value); } catch (e) {} };
+            const drop = name => { try { sessionStorage.removeItem(name); } catch (e) {} };
+
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+            function save() {
+                const state = { y: window.scrollY };
+                if (window.listState && window.listState.save) {
+                    try { Object.assign(state, window.listState.save()); } catch (e) {}
+                }
+                write(key, JSON.stringify(state));
+            }
+            window.addEventListener('pagehide', save);
+            // Перед переходом по ссылке — на случай, если pagehide не сработает
+            document.addEventListener('click', e => { if (e.target.closest('a[href]')) save(); }, true);
+
+            // «Tagasi»: если пришли именно с той страницы — обычный шаг назад по истории
+            // (сохраняет фильтры и подгруженные строки), иначе — переход с восстановлением позиции
+            document.addEventListener('click', e => {
+                const link = e.target.closest('a[data-back]');
+                if (!link || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+                const target = new URL(link.href, location.href);
+                let from = null;
+                try { from = document.referrer ? new URL(document.referrer) : null; } catch (err) {}
+                if (from && from.origin === location.origin && from.pathname === target.pathname && history.length > 1) {
+                    e.preventDefault();
+                    history.back();
+                    return;
+                }
+                write('listpos:restore', target.pathname + target.search);
+            });
+
+            const nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+            const navType = nav ? nav.type : (performance.navigation && performance.navigation.type === 2 ? 'back_forward' : 'navigate');
+            const viaBackButton = read('listpos:restore') === here;
+            drop('listpos:restore');
+
+            const raw = read(key);
+            if (!raw || !(navType === 'back_forward' || navType === 'reload' || viaBackButton)) return;
+
+            let state;
+            try { state = JSON.parse(raw); } catch (e) { return; }
+
+            Promise.resolve(window.listState && window.listState.restore ? window.listState.restore(state) : null)
+                .catch(() => {})
+                .then(() => {
+                    window.scrollTo(0, state.y || 0);
+                    // Картинки / шрифты могут догрузиться позже и сдвинуть страницу
+                    if (document.readyState !== 'complete') {
+                        window.addEventListener('load', () => window.scrollTo(0, state.y || 0), { once: true });
+                    }
+                });
+        })();
+    </script>
 </body>
 </html>

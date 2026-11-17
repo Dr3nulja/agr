@@ -53,15 +53,8 @@ class ReportBuilder
             $sheet->setCellValue('A' . $i, $Record->location);
             $sheet->setCellValue('B' . $i, $Record->devid);
 
-            if ((int) $Record->devtype === 1) {
-                $sheet->getStyle('B' . $i)->getFont()->getColor()->setRGB('0000FF');
-                $sheet->setCellValue('C' . $i, 'külm');
-            } elseif ((int) $Record->devtype === 2) {
-                $sheet->getStyle('B' . $i)->getFont()->getColor()->setRGB('FF0000');
-                $sheet->setCellValue('C' . $i, 'soe');
-            } else {
-                $sheet->setCellValue('C' . $i, '');
-            }
+            self::colorDevice($sheet, 'B' . $i, (int) $Record->devtype);
+            $sheet->setCellValue('C' . $i, ['cold' => 'külm', 'hot' => 'soe'][ReadingsService::tone((int) $Record->devtype)] ?? '');
 
             $date = $Record->date ?? null;
             if ($date !== null && date('m', strtotime($date)) == 12 && date('m') == 1) {
@@ -80,6 +73,7 @@ class ReportBuilder
         $sheet->getStyle('A5:B' . ($i - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('B5:B' . ($i - 1))->getNumberFormat()->setFormatCode('# ### ##0');
         $sheet->getStyle('A4:F' . ($i - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        self::setWidths($sheet, ['A' => 9, 'B' => 16, 'C' => 9, 'D' => 13, 'E' => 13, 'F' => 12]);
 
         return $spreadsheet;
     }
@@ -119,6 +113,7 @@ class ReportBuilder
         foreach ($data as $record) {
             $sheet->setCellValue('A' . $i, $record->location);
             $sheet->setCellValue('B' . $i, $record->devid);
+            self::colorDevice($sheet, 'B' . $i, (int) $record->devtype);
             $sheet->setCellValue('C' . $i, $record->value ?? 0);
             $sheet->setCellValue('D' . $i, $record->mvalue ?? 0);
             $i++;
@@ -127,12 +122,14 @@ class ReportBuilder
         $sheet->getStyle('A5:B' . ($i - 1))->getFont()->setBold(true);
         $sheet->getStyle('A5:B' . ($i - 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A5:D' . ($i - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        self::setWidths($sheet, ['A' => 9, 'B' => 16, 'C' => 13, 'D' => 12]);
 
         return $spreadsheet;
     }
 
     /**
-     * Показания и потребление по месяцам (страница «Näidud»): дом, квартира, прибор
+     * Показания (объём) на конец каждого месяца (страница «Näidud»): дом, квартира, прибор.
+     * Тип прибора — цветом номера, месяцы — от текущего к прошлым, как на странице.
      */
     public function readings(AgrObject $object, array $devices, array $monthly, array $periods, string $title): Spreadsheet
     {
@@ -143,9 +140,10 @@ class ReportBuilder
         $this->addAddress($sheet, $object);
         $this->addLogo($sheet, $object, 'F1');
 
-        $headers = ['Maja', 'Korter', 'Seadme nr', 'Tüüp', 'Viimane näit', 'Näidu kuupäev'];
-        foreach ($periods as $period) {
-            $headers[] = 'Kulu ' . $period;
+        $periodsDesc = array_reverse($periods);
+        $headers = ['Maja', 'Korter', 'Seadme nr', 'Viimane näit', 'Näidu kuupäev'];
+        foreach ($periodsDesc as $period) {
+            $headers[] = 'Näit ' . $period;
         }
 
         foreach ($headers as $index => $header) {
@@ -161,28 +159,56 @@ class ReportBuilder
                 $address,
                 $device['location'],
                 $device['devid'],
-                $device['type_label'],
                 $device['value'],
                 $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '',
             ];
-            foreach ($periods as $period) {
-                $values[] = $monthly[$device['devid']][$period]['consumption'] ?? null;
+            foreach ($periodsDesc as $period) {
+                $values[] = $monthly[$device['devid']][$period]['reading'] ?? null;
             }
             foreach ($values as $index => $value) {
                 $sheet->setCellValue([$index + 1, $row], $value);
             }
+            self::colorDevice($sheet, 'C' . $row, (int) $device['devtype']);
             $row++;
         }
 
         if ($row > 4) {
             $sheet->getStyle('A4:' . $lastColumn . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $sheet->getStyle('G4:' . $lastColumn . ($row - 1))->getNumberFormat()->setFormatCode('0.000');
+            $sheet->getStyle('C4:C' . ($row - 1))->getFont()->setBold(true);
+            $sheet->getStyle('D4:D' . ($row - 1))->getNumberFormat()->setFormatCode('0.000');
+            if (count($headers) > 5) {
+                $sheet->getStyle('F4:' . $lastColumn . ($row - 1))->getNumberFormat()->setFormatCode('0.000');
+            }
         }
-        foreach (range(1, count($headers)) as $column) {
-            $sheet->getColumnDimensionByColumn($column)->setAutoSize(true);
+        $sheet->getColumnDimension('A')->setAutoSize(true);
+        self::setWidths($sheet, ['B' => 9, 'C' => 14, 'D' => 13, 'E' => 13]);
+        foreach (range(6, max(6, count($headers))) as $column) {
+            $sheet->getColumnDimensionByColumn($column)->setWidth(12);
         }
 
         return $spreadsheet;
+    }
+
+    /**
+     * Номер прибора цветом типа: külm vesi — синий, soe vesi — красный, jaotur — оранжевый
+     */
+    public static function colorDevice(Worksheet $sheet, string $cell, int $devtype): void
+    {
+        $rgb = ['cold' => '0000FF', 'hot' => 'FF0000', 'heat' => 'C55A11'][ReadingsService::tone($devtype)] ?? null;
+
+        if ($rgb !== null) {
+            $sheet->getStyle($cell)->getFont()->getColor()->setRGB($rgb);
+        }
+    }
+
+    /**
+     * Ширина колонок — чтобы номер прибора (8 цифр с пробелами, жирный) влезал целиком
+     */
+    public static function setWidths(Worksheet $sheet, array $widths): void
+    {
+        foreach ($widths as $column => $width) {
+            $sheet->getColumnDimension($column)->setWidth($width);
+        }
     }
 
     /**

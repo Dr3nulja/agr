@@ -56,6 +56,19 @@ class ReadingsService
         };
     }
 
+    /**
+     * Цвет прибора: 'cold' — külm vesi (синий), 'hot' — soe vesi (красный), 'heat' — jaotur (оранжевый), '' — прочее
+     */
+    public static function tone(int $devtype): string
+    {
+        return match (true) {
+            $devtype === 1, $devtype >= 10 && $devtype < 20 => 'cold',
+            $devtype === 2, $devtype >= 20 && $devtype < 30 => 'hot',
+            self::isHeat($devtype) => 'heat',
+            default => '',
+        };
+    }
+
     public function hasTables(int $objectId): bool
     {
         return Schema::hasTable('object_' . $objectId)
@@ -97,7 +110,7 @@ class ReadingsService
             ->leftJoin('lastdata_' . $objectId . ' as L', 'O.devid', '=', 'L.devid')
             ->when($location !== '', fn ($query) => $query->where('O.location', $location))
             ->orderBy('O.id')
-            ->get(['O.devid', 'O.location', 'O.devtype', 'L.date', 'L.value', 'L.mvalue', 'L.prevVal'])
+            ->get(['O.devid', 'O.location', 'O.devtype', 'L.date', 'L.value', 'L.mvalue', 'L.prevVal', 'L.error', 'L.errorDate'])
             ->map(function ($row) {
                 $devtype = (int) $row->devtype;
                 $scale = $this->legacy->deviceScale($devtype);
@@ -113,6 +126,8 @@ class ReadingsService
                     'value' => $row->value !== null ? $row->value / $scale : null,
                     'mvalue' => $row->mvalue !== null ? $row->mvalue / $scale : null,
                     'prev_value' => $row->prevVal !== null ? $row->prevVal / $scale : null,
+                    'error' => $row->error !== null && (int) $row->error !== 0 ? (int) $row->error : null,
+                    'error_date' => $row->errorDate,
                 ];
             })
             ->filter(fn ($device) => $device['kind'] !== null && ($kind === null || $device['kind'] === $kind))
@@ -217,20 +232,44 @@ class ReadingsService
     }
 
     /**
-     * Потребление по месяцам суммарно для графика: kind => [period => float]
+     * Ошибки прибора для его страницы: код ошибки из lastdata, нет данных > 3 дней,
+     * и показания в истории, которые уменьшились (у водомера так быть не должно).
+     *
+     * @param  array  $history  — из history(), новые сверху
+     * @return array<int, array{date: ?string, text: string}>
      */
-    public static function totals(array $devices, array $monthly, array $periods): array
+    public static function problems(array $device, array $history): array
     {
-        $totals = [];
+        $problems = [];
 
-        foreach ($devices as $device) {
-            foreach ($periods as $period) {
-                $totals[$device['kind']][$period] ??= 0.0;
-                $totals[$device['kind']][$period] += $monthly[$device['devid']][$period]['consumption'] ?? 0;
+        if ($device['error'] ?? null) {
+            $problems[] = ['date' => $device['error_date'] ?? null, 'text' => 'Seadme veakood ' . $device['error']];
+        }
+
+        if (! $device['date']) {
+            $problems[] = ['date' => null, 'text' => 'Seade pole andmeid saatnud'];
+        } elseif (strtotime($device['date']) < now()->subDays(3)->getTimestamp()) {
+            $problems[] = ['date' => $device['date'], 'text' => 'Andmed vanemad kui 3 päeva'];
+        }
+
+        // Jaoturid alustavad hooaja alguses nullist — langus pole viga
+        if ($device['kind'] === self::KIND_WATER) {
+            $chronological = array_reverse($history);
+            for ($i = 1; $i < count($chronological); $i++) {
+                $before = $chronological[$i - 1]['value'];
+                $after = $chronological[$i]['value'];
+                if ($after < $before) {
+                    $problems[] = [
+                        'date' => $chronological[$i]['date'],
+                        'text' => sprintf('Näit vähenes: %s → %s', number_format($before, 3, '.', ' '), number_format($after, 3, '.', ' ')),
+                    ];
+                }
             }
         }
 
-        return $totals;
+        usort($problems, fn ($a, $b) => strcmp((string) $b['date'], (string) $a['date']));
+
+        return $problems;
     }
 
     public function device(int $objectId, int $devid): ?array

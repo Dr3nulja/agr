@@ -31,6 +31,8 @@
             font-weight: 500;
             color: var(--text);
         }
+        .stat-box.tint-leak { background: linear-gradient(160deg, oklch(0.95 0.05 25), var(--surface) 60%); }
+        .stat-box.tint-leak .stat-number { color: oklch(0.5 0.19 25); }
         .stat-box.tint-good .stat-number { color: oklch(0.4 0.1 155); }
         .stat-box.tint-warn .stat-number { color: oklch(0.45 0.1 70); }
         .stat-label { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-top: 8px; }
@@ -75,6 +77,10 @@
                 <div class="stat-number">{{ $offlineObjects }}</div>
                 <div class="stat-label">Ühenduseta</div>
             </div>
+            <a href="{{ route('leaks.index') }}" class="stat-box {{ $openLeaks ? 'tint-leak' : '' }}" style="text-decoration: none;">
+                <div class="stat-number">{{ $openLeaks }}</div>
+                <div class="stat-label">💧 Võimalikud lekked</div>
+            </a>
         </div>
     </div>
 

@@ -362,64 +362,29 @@
             margin-bottom: 12px;
         }
 
-        .pagination-section {
+        .load-more {
             padding: 16px;
             text-align: center;
             border-top: 1px solid var(--border);
         }
 
-        /* Pagination controls styling */
-        .pagination-section nav {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .pagination-section .pagination {
-            display: inline-flex;
-            gap: 8px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            align-items: center;
-        }
-
-        .pagination-section .pagination li a,
-        .pagination-section .pagination li span {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 36px;
-            padding: 0 12px;
+        .load-more-btn {
+            padding: 8px 18px;
             border-radius: 8px;
             border: 1px solid var(--border);
             background: var(--bg);
             color: var(--text);
-            text-decoration: none;
-            font-size: 0.95rem;
-            box-sizing: border-box;
+            font: inherit;
+            cursor: pointer;
         }
 
-        .pagination-section .pagination li.active span {
-            background: var(--primary-grad);
-            color: #fff;
-            border-color: transparent;
-            font-weight: 500;
-        }
-
-        .pagination-section .pagination li a:hover {
+        .load-more-btn:hover {
             background: var(--border);
         }
 
-        /* Smaller arrow buttons */
-        .pagination-section .pagination li.arrow a,
-        .pagination-section .pagination li.arrow span {
-            min-width: 32px;
-            height: 32px;
-            padding: 0 8px;
-            font-size: 1rem;
+        .load-more-btn:disabled {
+            cursor: default;
+            opacity: 0.6;
         }
 
         .header-section {
@@ -459,7 +424,7 @@
     <div class="header-section">
         <div>
             <h2>🏠 Objektid</h2>
-            <p style="color: var(--text-muted); margin-top: 4px;">Näidatakse {{ $objects->count() }} / {{ $objects->total() }} objekti</p>
+            <p style="color: var(--text-muted); margin-top: 4px;">Näidatakse <span id="shownCount">{{ $objects->count() }}</span> / {{ $objects->total() }} objekti</p>
         </div>
         @if(session('user')->role == 1)
             <a href="{{ route('objects.create') }}" class="create-btn">+ Lisa objekt</a>
@@ -547,173 +512,16 @@
                         <th style="width: 50px;"></th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach($objects as $object)
-                            <tr class="{{ ($object->status == 2 ? 'inactive-row' : '') }} {{ $object->selDate ? 'selected-row' : ($object->water_checked_at ? 'water-row' : '') }}">
-                                <td class="address-cell">{{ $object->address }}</td>
-                                <td class="city-cell">{{ $object->City }}</td>
-                                <td class="description-cell">{!! nl2br(e($object->Description ?? '-')) !!}</td>
-                                <td>
-                                    @if($object->status == 1)
-                                        <span class="status-pill is-active">✓ Aktiivne</span>
-                                    @elseif($object->status == 2)
-                                        <span class="status-pill is-inactive">✕ Mitteaktiivne</span>
-                                    @else
-                                        <span class="status-pill is-inactive">Teadmata</span>
-                                    @endif
-                                </td>
-                                <td>{{ \App\Models\AgrObject::companyDisplayName($object->Company) }}</td>
-                                <td>
-                                    @if($object->dtype == 1) 💧 Apator
-                                    @elseif($object->dtype == 2) 🔥 Siemens
-                                    @elseif($object->dtype == 3) ⚡ Elekter
-                                    @elseif($object->dtype == 4) 📡 LoRa
-                                    @else {{ $object->dtype }} @endif
-                                </td>
-                                <td>
-                                    @if($object->selDate)
-                                        <span class="status-pill is-checked">✓ Esitatud</span>
-                                    @elseif($object->water_checked_at)
-                                        <span class="status-pill is-water">💧 Vesi</span>
-                                    @else
-                                        <span class="status-pill is-unchecked">Esitamata</span>
-                                    @endif
-                                </td>
-                                <td>{{ $object->Devqtty ?? 0 }}</td>
-                                <td class="errors-cell">
-                                    <span class="error-icon water" title="Vesi">{{ $object->water_errors ?? 0 }}</span>
-                                    <span class="error-icon warning" title="Soojus">{{ $object->heat_errors ?? 0 }}</span>
-                                    <span class="error-icon danger" title="Vead">{{ $object->errors ?? 0 }}</span>
-                                </td>
-                                <td class="fw-cell">{{ $object->ver ?? '-' }}</td>
-                                <td>
-                                    <div class="row-actions">
-                                        <a href="{{ route('objects.show', $object->id) }}" class="view-btn">👁️ Vaata</a>
-                                        @if(session('user')->role == 1)
-                                        <div class="action-menu">
-                                            <button class="menu-btn" onclick="toggleMenu(this)">⋯</button>
-                                            <div class="menu-dropdown">
-                                                <a href="{{ route('objects.edit', $object->id) }}" class="menu-item">
-                                                    ✏️ Muuda
-                                                </a>
-                                                <a href="{{ route('objects.soe', $object->id) }}" class="menu-item">
-                                                    ⚙️ SOE
-                                                </a>
-                                                <a href="{{ route('readings.index', $object->id) }}" class="menu-item">
-                                                    📈 Näidud
-                                                </a>
-                                                <a href="{{ route('objects.export.current', $object->id) }}" class="menu-item">
-                                                    📥 Export Current Val XLSX
-                                                </a>
-                                                <a href="{{ route('objects.export.month_start', $object->id) }}" class="menu-item">
-                                                    📥 Export Month Start
-                                                </a>
-                                                <a href="{{ route('objects.export.alokator', $object->id) }}" class="menu-item">
-                                                    📥 Export Alokator XLSX
-                                                </a>
-                                                <a href="{{ route('objects.export.korto', $object->id) }}" class="menu-item">
-                                                    📥 Export Korto CSV
-                                                </a>
-                                                <button class="menu-item delete" type="button" onclick="if(confirm('Kas kustutada objekt?')) { deleteObject({{ $object->id }}) }">
-                                                    🗑️ Kustuta
-                                                </button>
-                                            </div>
-                                        </div>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
+                    <tbody id="objectRows">
+                        @include('objects._rows', ['objects' => $objects])
                     </tbody>
                 </table>
             </div>
 
-            @if($objects->hasPages())
-                <div class="pagination-section">
-                    <nav aria-label="Lehekülgede navigeerimine">
-                        <ul class="pagination">
-                            <li class="arrow prev {{ $objects->onFirstPage() ? 'disabled' : '' }}">
-                                @if($objects->onFirstPage())
-                                    <span aria-hidden="true">&laquo;</span>
-                                @else
-                                    <a href="{{ $objects->previousPageUrl() }}" rel="prev" aria-label="Eelmine">&laquo;</a>
-                                @endif
-                            </li>
-
-                            @php
-                                $last = $objects->lastPage();
-                                $current = $objects->currentPage();
-                                $start = max(1, $current - 2);
-                                $end = min($last, $current + 2);
-                                $urlTemplate = str_replace('999999999', '__PAGE__', $objects->url(999999999));
-                            @endphp
-
-                            @if($start > 1)
-                                <li class="{{ $current == 1 ? 'active' : '' }}">
-                                    @if($current == 1)
-                                        <span>1</span>
-                                    @else
-                                        <a href="{{ $objects->url(1) }}">1</a>
-                                    @endif
-                                </li>
-                                @if($start > 2)
-                                    <li><a href="#" class="jump-ellipsis" data-last="{{ $last }}" data-url-template="{{ $urlTemplate }}">…</a></li>
-                                @endif
-                            @endif
-
-                            @for ($page = $start; $page <= $end; $page++)
-                                <li class="{{ $current == $page ? 'active' : '' }}">
-                                    @if($current == $page)
-                                        <span>{{ $page }}</span>
-                                    @else
-                                        <a href="{{ $objects->url($page) }}">{{ $page }}</a>
-                                    @endif
-                                </li>
-                            @endfor
-
-                            @if($end < $last)
-                                @if($end < $last - 1)
-                                    <li><a href="#" class="jump-ellipsis" data-last="{{ $last }}" data-url-template="{{ $urlTemplate }}">…</a></li>
-                                @endif
-                                <li class="{{ $current == $last ? 'active' : '' }}">
-                                    @if($current == $last)
-                                        <span>{{ $last }}</span>
-                                    @else
-                                        <a href="{{ $objects->url($last) }}">{{ $last }}</a>
-                                    @endif
-                                </li>
-                            @endif
-                            <script>
-                                document.addEventListener('click', function(e){
-                                    var target = e.target;
-                                    if(target.classList && target.classList.contains('jump-ellipsis')){
-                                        e.preventDefault();
-                                        var last = parseInt(target.dataset.last, 10) || 1;
-                                        var template = target.dataset.urlTemplate || '';
-                                        var input = prompt('Mine lehele (1 - ' + last + ')');
-                                        if(input === null) return;
-                                        var page = parseInt(input, 10);
-                                        if(isNaN(page) || page < 1 || page > last){
-                                            alert('Vale lehekülje number');
-                                            return;
-                                        }
-                                        var url = template.replace('__PAGE__', page);
-                                        window.location.href = url;
-                                    }
-                                });
-                            </script>
-
-                            <li class="arrow next {{ $objects->hasMorePages() ? '' : 'disabled' }}">
-                                @if($objects->hasMorePages())
-                                    <a href="{{ $objects->nextPageUrl() }}" rel="next" aria-label="Järgmine">&raquo;</a>
-                                @else
-                                    <span aria-hidden="true">&raquo;</span>
-                                @endif
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            @endif
+            {{-- Один длинный список: следующая порция подгружается при прокрутке до конца --}}
+            <div class="load-more" id="loadMore" data-next="{{ $objects->nextPageUrl() }}" @if(! $objects->hasMorePages()) hidden @endif>
+                <button type="button" class="load-more-btn" id="loadMoreBtn">Näita veel</button>
+            </div>
         </div>
     @else
         <div class="empty-state">
@@ -754,6 +562,78 @@
                 });
             }
         });
+
+        // Бесконечный список: когда низ таблицы виден — догружаем следующую страницу
+        (function () {
+            const box = document.getElementById('loadMore');
+            if (!box) return;
+            const btn = document.getElementById('loadMoreBtn');
+            const rows = document.getElementById('objectRows');
+            const shown = document.getElementById('shownCount');
+            let inflight = null;
+
+            // Возвращает true, если порция загрузилась
+            function loadMore() {
+                if (inflight) return inflight;
+                if (!box.dataset.next) return Promise.resolve(false);
+                inflight = fetchNext().finally(() => { inflight = null; });
+                return inflight;
+            }
+
+            async function fetchNext() {
+                const next = box.dataset.next;
+                let ok = false;
+                btn.disabled = true;
+                btn.textContent = 'Laen…';
+                try {
+                    const response = await fetch(next, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const data = await response.json();
+                    rows.insertAdjacentHTML('beforeend', data.html);
+                    shown.textContent = rows.querySelectorAll(':scope > tr').length;
+                    box.dataset.next = data.next || '';
+                    box.hidden = !data.next;
+                    btn.textContent = 'Näita veel';
+                    ok = true;
+                } catch (e) {
+                    btn.textContent = 'Laadimine ebaõnnestus — proovi uuesti';
+                } finally {
+                    btn.disabled = false;
+                }
+                return ok;
+            }
+
+            // Экран высокий и низ всё ещё виден — грузим дальше
+            function loadWhileVisible() {
+                if (restoring) return;
+                loadMore().then(ok => {
+                    if (ok && box.dataset.next && box.getBoundingClientRect().top < window.innerHeight + 400) loadWhileVisible();
+                });
+            }
+
+            // При возврате на список подгружаем столько же строк, сколько было, — потом layout вернёт прокрутку
+            let restoring = false;
+            window.listState = {
+                save: () => ({ rows: rows.querySelectorAll(':scope > tr').length }),
+                restore: async state => {
+                    restoring = true;
+                    try {
+                        while ((state.rows || 0) > rows.querySelectorAll(':scope > tr').length && box.dataset.next) {
+                            if (!(await loadMore())) break;
+                        }
+                    } finally {
+                        restoring = false;
+                    }
+                },
+            };
+
+            btn.addEventListener('click', () => loadMore());
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver(entries => {
+                    if (entries.some(entry => entry.isIntersecting)) loadWhileVisible();
+                }, { rootMargin: '400px' }).observe(box);
+            }
+        })();
 
         function deleteObject(id) {
             const form = document.createElement('form');

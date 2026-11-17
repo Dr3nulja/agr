@@ -50,6 +50,30 @@ chown -R www-data:www-data storage bootstrap/cache
 - добавляет в `objects` колонки `water_checked_at`, `heat_checked_at` (два чека: вода / тепло)
   и `report_emails` (куда слать отчёты); создаёт `reading_corrections` (журнал ручных правок
   показаний) и `monthly_readings` (зафиксированные месячные показания).
+- создаёт `maintenance_requests` — заявки «Hooldus» из приложения (`POST /insert_hooldus`,
+  вкладка «Hooldus» на сайте). Без этой таблицы кнопка «Hooldus» в приложении 1.1 выдаёт ошибку.
+- создаёт `leak_alerts` — найденные утечки воды (вкладка «Lekked»).
+
+### Утечки воды (≥ 5 м³ в сутки)
+
+Каждое утро в 06:00 (по Таллину) команда `leaks:check` проверяет вчерашний день: водомер,
+насчитавший за сутки 5 м³ или больше, попадает во вкладку «Lekked», на «Töölaud» и в ошибки
+на странице счётчика. Для расписания нужен cron (один раз):
+
+```bash
+crontab -u www-data -e
+* * * * * cd /var/www/agr && php artisan schedule:run >> /dev/null 2>&1
+```
+
+В `.env` (необязательно):
+
+```
+LEAK_DAILY_M3=5                                   # порог, м³ в сутки
+LEAK_ALERT_EMAILS=hooldus@firma.ee,juht@firma.ee  # кому слать письмо о новых утечках
+```
+
+Вручную: `php artisan leaks:check` (вчера), `php artisan leaks:check --days=30` (последние
+30 дней), `--date=2026-11-01`, `--object=123`, `--no-mail`. На сайте — кнопка «Kontrolli kohe».
 
 Почта для кнопки «Saada»: `MAIL_*` в `.env` (SMTP). Пока `MAIL_MAILER=log`, письма не уходят,
 а пишутся в `storage/logs/laravel.log`.

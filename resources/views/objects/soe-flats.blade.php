@@ -37,7 +37,7 @@
         <p class="meta">{{ $object['address'] }} / {{ $object['city'] }}</p>
         <div class="actions">
             <a class="btn" href="{{ route('objects.soe', $object['id']) }}">SOE seaded</a>
-            <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}">Tagasi</a>
+            <a class="btn btn-secondary" href="{{ route('objects.show', $object['id']) }}" data-back>Tagasi</a>
         </div>
     </div>
 

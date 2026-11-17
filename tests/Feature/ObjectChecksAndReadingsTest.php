@@ -177,12 +177,95 @@ class ObjectChecksAndReadingsTest extends TestCase
         $this->assertEqualsWithDelta(2.5, $monthly[1001]['2026-08']['consumption'], 0.0001);
         $this->assertEqualsWithDelta(0.5, $monthly[1001]['2026-09']['consumption'], 0.0001);
 
+        // В месячных колонках — объём (показание на конец месяца), а не расход; графика расхода нет
         $this->withSession($session)->get('/objects/' . $object->id . '/readings?from=2026-08&to=2026-09&location=5')
-            ->assertOk()->assertSee('2.500')->assertSee('<svg', false);
+            ->assertOk()->assertSeeInOrder(['13.000', '12.500'])->assertDontSee('Kulu kuude kaupa')
+            ->assertDontSee('<th>Tüüp</th>', false)->assertSee('rd-tone-cold', false);
         $this->withSession($session)->get('/objects/' . $object->id . '/readings/print?from=2026-08&to=2026-09&location=5')
             ->assertOk()->assertSee('Korter:')->assertSee($object->address);
         $this->withSession($session)->get('/objects/' . $object->id . '/readings/export.xlsx?from=2026-08&to=2026-09')
             ->assertOk()->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_readings_excel_colors_devices_and_shows_volume(): void
+    {
+        $session = $this->admin();
+        $object = $this->object([10835943 => ['5', 1], 10835944 => ['5', 2]]);
+        DB::table('mlog_' . $object->id)->insert(['devid' => 10835943, 'date' => '2026-09-30 23:00:00', 'value' => 13000]);
+        DB::table('lastdata_' . $object->id)->insert(['devid' => 10835943, 'date' => '2026-09-30 23:00:00', 'value' => 13000, 'mvalue' => 13000, 'prevVal' => 12500]);
+
+        $sheet = $this->downloadSheet($session, '/objects/' . $object->id . '/readings/export.xlsx?from=2026-09&to=2026-09');
+        $this->assertSame('Seadme nr', $sheet->getCell('C3')->getValue());
+        $this->assertSame('Näit 2026-09', $sheet->getCell('F3')->getValue());
+        $this->assertEqualsWithDelta(13.0, $sheet->getCell('F4')->getValue(), 0.0001);
+        $this->assertSame('0000FF', $sheet->getStyle('C4')->getFont()->getColor()->getRGB());
+        $this->assertSame('FF0000', $sheet->getStyle('C5')->getFont()->getColor()->getRGB());
+
+        // Отчёт по водомерам: номер прибора окрашен и колонка достаточно широкая
+        $water = $this->downloadSheet($session, '/objects/' . $object->id . '/export');
+        $this->assertSame('FF0000', $water->getStyle('B6')->getFont()->getColor()->getRGB());
+        $this->assertGreaterThanOrEqual(16, $water->getColumnDimension('B')->getWidth());
+    }
+
+    public function test_device_page_shows_chart_and_errors(): void
+    {
+        $session = $this->admin();
+        $object = $this->object([1001 => ['5', 1]]);
+        DB::table('mlog_' . $object->id)->insert([
+            ['devid' => 1001, 'date' => '2026-08-31 23:00:00', 'value' => 12500],
+            ['devid' => 1001, 'date' => '2026-09-30 23:00:00', 'value' => 12000],
+        ]);
+        DB::table('lastdata_' . $object->id)->insert(['devid' => 1001, 'date' => '2026-09-30 23:00:00', 'value' => 12000, 'mvalue' => 12000, 'prevVal' => 12500, 'error' => 5, 'errorDate' => '2026-09-29 10:00:00']);
+
+        $this->withSession($session)->get('/objects/' . $object->id . '/readings/1001')
+            ->assertOk()
+            ->assertSee('Näitude graafik')->assertSee('<polyline', false)
+            ->assertSee('Seadme veakood 5')->assertSee('Näit vähenes')->assertSee('Andmed vanemad kui 3 päeva')
+            ->assertSee('Näitude ajalugu');
+    }
+
+    public function test_object_page_shows_current_before_previous_and_folds(): void
+    {
+        $session = $this->admin();
+        $object = $this->object([1001 => ['5', 1]]);
+        DB::table('lastdata_' . $object->id)->insert(['devid' => 1001, 'date' => '2026-09-30 23:00:00', 'value' => 13000, 'mvalue' => 13000, 'prevVal' => 12500]);
+        $timeColumn = \Illuminate\Support\Facades\Schema::hasColumn('csq', 'date') ? 'date' : 'created_at';
+        DB::table('csq')->insert([
+            ['object' => $object->id, 'csq' => 18, $timeColumn => '2026-09-01 10:00:00'],
+            ['object' => $object->id, 'csq' => 21, $timeColumn => '2026-09-02 10:00:00'],
+        ]);
+
+        $this->withSession($session)->get('/objects/' . $object->id)
+            ->assertOk()
+            ->assertSeeInOrder(['Praegune', 'Eelmine'])
+            ->assertSeeInOrder(['13.000', '12.500'])
+            ->assertSee('data-fold="check"', false)->assertSee('data-fold="csq"', false)
+            ->assertSee('viimane 21')
+            ->assertSee('/readings/1001', false);
+    }
+
+    public function test_check_from_object_list_returns_to_list(): void
+    {
+        $session = $this->admin();
+        $object = $this->object([1001 => ['5', 1]]);
+
+        $this->withSession($session)->from('/objects?checked=unchecked')
+            ->post('/objects/' . $object->id . '/check', ['from' => 'list'])
+            ->assertRedirect('/objects?checked=unchecked');
+        $this->assertNotNull($object->fresh()->selDate);
+
+        $this->withSession($session)->get('/objects')->assertOk()->assertSee('Eemalda märked');
+    }
+
+    private function downloadSheet(array $session, string $url): \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
+    {
+        $response = $this->withSession($session)->get($url)->assertOk();
+        $path = tempnam(sys_get_temp_dir(), 'xlsx') . '.xlsx';
+        file_put_contents($path, $response->streamedContent());
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getActiveSheet();
+        @unlink($path);
+
+        return $sheet;
     }
 
     public function test_manual_reading_updates_current_value_and_is_logged(): void
