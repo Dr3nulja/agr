@@ -144,7 +144,7 @@ class ObjectChecksAndReadingsTest extends TestCase
         $this->assertSame('a@example.ee, b@example.ee', $object->fresh()->report_emails);
     }
 
-    public function test_objects_list_filters_by_several_managers_and_merges_agr_with_prem(): void
+    public function test_objects_list_filters_by_several_managers_and_keeps_agr_and_prem_apart(): void
     {
         $session = $this->admin();
         $kat = $this->object([], ['address' => 'KAT maja', 'manager' => 2, 'Company' => 2]);
@@ -153,10 +153,18 @@ class ObjectChecksAndReadingsTest extends TestCase
 
         $this->withSession($session)->get('/objects?manager[]=2&manager[]=3')
             ->assertSee('KAT maja')->assertSee('REG maja')->assertDontSee('NAT maja')
-            ->assertDontSee('Prem');
+            ->assertSee('<td>Prem</td>', false)->assertSee('<td>AGR</td>', false);
 
-        $this->withSession($session)->get('/objects?company=agr')
-            ->assertSee('KAT maja')->assertSee('REG maja')->assertSee('NAT maja');
+        // В фильтре «Paigaldaja» — две отдельные компании
+        $this->withSession($session)->get('/objects')
+            ->assertSee('<option value="1" >AGR</option>', false)
+            ->assertSee('<option value="2" >Prem</option>', false);
+
+        $this->withSession($session)->get('/objects?company=2')
+            ->assertSee('KAT maja')->assertDontSee('REG maja')->assertDontSee('NAT maja');
+        $this->withSession($session)->get('/objects?company=1')
+            ->assertDontSee('KAT maja')->assertSee('REG maja')->assertSee('NAT maja');
+        $this->withSession($session)->get('/objects/' . $kat->id)->assertSee('Prem');
     }
 
     public function test_readings_page_shows_monthly_consumption_and_exports(): void

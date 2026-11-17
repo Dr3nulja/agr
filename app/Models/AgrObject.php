@@ -7,9 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AgrObject extends Model
 {
-    // Prem — та же фирма: в списках показываем как AGR, а в отчётах ставим свой логотип
+    // Компания-установщик: в списках, фильтре и отчётах (логотип) — отдельно
     public const COMPANIES = [1 => 'AGR', 2 => 'Prem'];
-    public const COMPANY_GROUP = [1, 2];
 
     public const MANAGERS = [1 => 'IRA', 2 => 'KAT', 3 => 'REG', 4 => 'NAT'];
 
@@ -101,12 +100,12 @@ class AgrObject extends Model
     }
 
     /**
-     * Название компании для списков и страниц: AGR и Prem — одно и то же
+     * Название компании для списков и страниц: AGR / Prem
      */
     public static function companyDisplayName($company): string
     {
-        if (in_array((int) $company, self::COMPANY_GROUP, true)) {
-            return self::COMPANIES[1];
+        if (isset(self::COMPANIES[(int) $company])) {
+            return self::COMPANIES[(int) $company];
         }
 
         return $company ? 'Installer #' . $company : '—';

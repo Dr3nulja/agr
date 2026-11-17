@@ -26,13 +26,9 @@ class ObjectController extends Controller
     {
         $query = AgrObject::query();
 
-        // Фильтрация по компании / установщику (AGR и Prem — одна группа)
+        // Фильтрация по компании / установщику: AGR (1) и Prem (2) — отдельно
         if ($request->input('company') !== null && $request->company !== '') {
-            if ($request->company === 'agr') {
-                $query->whereIn('Company', AgrObject::COMPANY_GROUP);
-            } else {
-                $query->where('Company', $request->company);
-            }
+            $query->where('Company', (int) $request->company);
         }
 
         // Фильтрация по менеджеру: IRA / KAT / REG / NAT, можно несколько
@@ -98,9 +94,7 @@ class ObjectController extends Controller
             ->orderBy('Company')
             ->pluck('Company')
             ->filter()
-            ->mapWithKeys(fn ($company) => in_array((int) $company, AgrObject::COMPANY_GROUP, true)
-                ? ['agr' => AgrObject::companyDisplayName($company)]
-                : [(string) $company => AgrObject::companyDisplayName($company)]);
+            ->mapWithKeys(fn ($company) => [(string) $company => AgrObject::companyDisplayName($company)]);
 
         $summary = [
             'total' => AgrObject::where('status', '>', 0)->count(),
