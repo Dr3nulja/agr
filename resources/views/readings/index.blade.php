@@ -34,6 +34,7 @@
         .rd-fixed a { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.85rem; }
         .rd-fixed a.active { border-color: var(--primary); color: var(--primary); }
     </style>
+    @include('readings._device-styles')
 @endsection
 
 @section('content')
@@ -122,6 +123,7 @@
                         <thead>
                             <tr>
                                 @php $periodsDesc = collect($periods)->reverse()->values(); // в таблице — от текущего месяца к прошлым @endphp
+                                <th style="width: 34px;"></th>
                                 <th>Korter</th>
                                 <th>Seadme nr</th>
                                 <th class="num">Viimane näit</th>
@@ -129,21 +131,20 @@
                                 @foreach($periodsDesc as $period)
                                     <th class="num">{{ \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $period . '-01')->format('m.Y') }}</th>
                                 @endforeach
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="rdBody">
                             @foreach($devices as $device)
-                                <tr>
-                                    <td>{{ $device['location'] ?: '—' }}</td>
+                                <tr class="rd-dev-row" data-devid="{{ $device['devid'] }}" data-panel-url="{{ route('readings.panel', [$object->id, $device['devid']]) }}">
+                                    <td><button type="button" class="rd-toggle" title="Näita seadme andmeid" aria-expanded="false">▶</button></td>
+                                    <td class="rd-loc">{{ $device['location'] ?: '—' }}</td>
                                     <td class="rd-mono rd-devid rd-tone-{{ \App\Services\ReadingsService::tone($device['devtype']) }}" title="{{ $device['type_label'] }}">{{ $device['devid'] }}@if($device['error'] ?? null) <span title="Viga {{ $device['error'] }}">⚠️</span>@endif</td>
-                                    <td class="num">{{ $device['value'] !== null ? number_format($device['value'], 3, '.', ' ') : '—' }}</td>
-                                    <td>{{ $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '—' }}</td>
+                                    <td class="num rd-cur-value">{{ $device['value'] !== null ? number_format($device['value'], 3, '.', ' ') : '—' }}</td>
+                                    <td class="rd-cur-date">{{ $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '—' }}</td>
                                     @foreach($periodsDesc as $period)
                                         @php $reading = $monthly[$device['devid']][$period]['reading'] ?? null; @endphp
-                                        <td class="num">{{ $reading !== null ? number_format($reading, 3, '.', ' ') : '·' }}</td>
+                                        <td class="num rd-month">{{ $reading !== null ? number_format($reading, 3, '.', ' ') : '·' }}</td>
                                     @endforeach
-                                    <td><a href="{{ route('readings.device', [$object->id, $device['devid'], 'back' => request()->fullUrl()]) }}" class="rd-btn" style="padding: 4px 12px; font-size: 0.8rem;">{{ $isAdmin ? '✏️ Ajalugu' : 'Ajalugu' }}</a></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -180,16 +181,41 @@
 @endsection
 
 @section('extra-scripts')
+    @include('readings._panel-script')
     <script>
-        var rdSearch = document.getElementById('rdSearch');
-        if (rdSearch) {
-            rdSearch.addEventListener('input', function () {
-                var query = this.value.trim().toLowerCase();
-                document.querySelectorAll('#rdBody tr').forEach(function (row) {
-                    var text = row.cells[0].textContent + ' ' + row.cells[1].textContent;
-                    row.style.display = text.toLowerCase().indexOf(query) === -1 ? 'none' : '';
-                });
+        (function () {
+            var body = document.getElementById('rdBody');
+            var search = document.getElementById('rdSearch');
+            if (!body) return;
+
+            var panels = window.initDevicePanels({
+                body: body,
+                wrap: body.closest('.rd-table-wrap'),
+                rowSelector: 'tr.rd-dev-row',
+                onUpdate: function (row, device, changed) {
+                    row.querySelector('.rd-cur-value').textContent = device.value;
+                    row.querySelector('.rd-cur-date').textContent = device.date;
+                    if (changed) {
+                        row.querySelector('.rd-devid').textContent = device.devid;
+                        // Месячные показания были у старого прибора
+                        row.querySelectorAll('.rd-month').forEach(function (cell) { cell.textContent = '·'; });
+                    }
+                },
             });
-        }
+
+            // Поиск: строка прибора и её раскрытая панель скрываются вместе
+            if (search) {
+                search.addEventListener('input', function () {
+                    var query = this.value.trim().toLowerCase();
+                    body.querySelectorAll('tr.rd-dev-row').forEach(function (row) {
+                        var text = (row.querySelector('.rd-loc').textContent + ' ' + row.querySelector('.rd-devid').textContent).toLowerCase();
+                        var hide = text.indexOf(query) === -1;
+                        row.style.display = hide ? 'none' : '';
+                        var panelRow = panels.panelRowOf(row);
+                        if (panelRow) panelRow.style.display = hide ? 'none' : '';
+                    });
+                });
+            }
+        })();
     </script>
 @endsection

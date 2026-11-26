@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'AGR')</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <style>
         :root {
             --primary: oklch(0.62 0.19 254);
@@ -266,6 +267,25 @@
     </div>
 
     @yield('extra-scripts')
+
+    {{-- Даты: родной datetime-local показывает формат локали ОС (MM/DD/YYYY, AM/PM).
+         flatpickr показывает дд/мм/гггг ЧЧ:мм (24 ч), а на сервер уходит прежнее значение Y-m-d\TH:i --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/et.js"></script>
+    <script>
+        // initDatePickers(root) — и для блоков, подгруженных позже (например, панель прибора)
+        window.initDatePickers = function (root) {
+            if (!window.flatpickr) return;
+            const common = { locale: 'et', altInput: true, allowInput: true, disableMobile: true };
+            (root || document).querySelectorAll('input[type="datetime-local"]').forEach(el => flatpickr(el, Object.assign({
+                enableTime: true, time_24hr: true, dateFormat: 'Y-m-d\\TH:i', altFormat: 'd/m/Y H:i',
+            }, common)));
+            (root || document).querySelectorAll('input[type="date"]').forEach(el => flatpickr(el, Object.assign({
+                dateFormat: 'Y-m-d', altFormat: 'd/m/Y',
+            }, common)));
+        };
+        window.initDatePickers(document);
+    </script>
 
     <script>
         // Возврат к спискам без прыжка наверх: позиция прокрутки (и состояние списка,
