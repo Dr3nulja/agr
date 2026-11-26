@@ -259,21 +259,134 @@
             text-decoration: underline;
         }
 
+        /* Телефон */
+        @media (max-width: 640px) {
+            .panel {
+                padding: 14px 12px;
+                border-radius: 14px;
+                margin-bottom: 12px;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+            }
+
+            .obj-head h2 {
+                font-size: 1.3rem;
+                margin-top: 0;
+            }
+
+            .obj-head-sub {
+                font-size: 0.85rem;
+                word-break: break-word;
+            }
+
+            /* Кнопки объекта — сеткой по две, а не столбиком на весь экран */
+            .obj-actions {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px !important;
+                width: 100%;
+            }
+
+            .obj-actions .btn {
+                justify-content: center;
+                padding: 9px 8px;
+                font-size: 0.82rem;
+                text-align: center;
+                white-space: normal;
+                line-height: 1.2;
+            }
+
+            .info-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+                gap: 8px !important;
+            }
+
+            .info-box {
+                padding: 8px 10px;
+                min-width: 0;
+            }
+
+            .info-label {
+                font-size: 0.7rem;
+            }
+
+            .info-value {
+                font-size: 0.95rem;
+                overflow-wrap: anywhere;
+            }
+
+            .fold-extra {
+                order: 3;
+                flex: 1 1 100%;
+                margin-left: 0;
+            }
+
+            .fold-extra input[type="search"] {
+                width: 100% !important;
+            }
+
+            .fold-extra + .fold-btn {
+                margin-left: auto;
+            }
+
+            /* Таблица приборов: без №, Eelmine и Vahe — остальное влезает в экран */
+            .device-table {
+                min-width: 0 !important;
+                font-size: 0.85rem;
+            }
+
+            .device-table > thead > tr > th,
+            .device-table > tbody > tr.device-row > td {
+                padding: 9px 6px;
+            }
+
+            .device-table > thead > tr > :nth-child(2),
+            .device-table > thead > tr > :nth-child(6),
+            .device-table > thead > tr > :nth-child(7),
+            .device-table > tbody > tr.device-row > :nth-child(2),
+            .device-table > tbody > tr.device-row > :nth-child(6),
+            .device-table > tbody > tr.device-row > :nth-child(7) {
+                display: none;
+            }
+
+            .device-table > thead > tr > :nth-child(9),
+            .device-table > tbody > tr.device-row > :nth-child(9) {
+                display: none;
+            }
+
+            .device-table .dv-date {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+            }
+
+            /* Вместо колонки «Staatus»: старые данные — дата красным */
+            .device-table .dv-date.dv-stale {
+                color: var(--danger);
+            }
+
+            .device-table .dv-date.dv-stale::before {
+                content: '⚠️ ';
+            }
+        }
+
     </style>
+    @include('readings._device-styles')
 @endsection
 
 @section('content')
     @include('partials.flash')
 
     <div class="panel" style="padding-bottom: 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div class="obj-head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
                 <h2 style="margin-bottom: 4px;">{{ $object['address'] }}</h2>
-                <div style="color: var(--text-muted);">
+                <div class="obj-head-sub" style="color: var(--text-muted);">
                     {{ $object['City'] ?? '—' }} · {{ ['1' => 'Apator', '2' => 'Siemens', '3' => 'Elekter', '4' => 'LoRa'][(string) $object['dtype']] ?? 'tüüp ' . $object['dtype'] }} · IMEI: {{ $object['IMEI'] ?? '—' }}
                 </div>
             </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div class="obj-actions" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <a href="{{ route('readings.index', $object['id']) }}" class="btn btn-secondary">📈 Näidud</a>
                 @if(session('user')->role == 1)
                     <a href="{{ route('objects.edit', $object['id']) }}" class="btn btn-primary">✏️ Muuda</a>
@@ -526,10 +639,11 @@
                     return [$label, $class];
                 };
             @endphp
-            <div style="overflow-x:auto;">
+            <div class="device-table-wrap" style="overflow-x:auto;">
                 <table class="device-table" style="width:100%; border-collapse: collapse; min-width: 1020px;">
                     <thead>
                         <tr>
+                            <th style="width: 34px;"></th>
                             <th class="sortable" data-sort="num">№ <span class="sort-mark"></span></th>
                             <th class="sortable" data-sort="location">Korter <span class="sort-mark"></span></th>
                             <th class="sortable" data-sort="devid">ID <span class="sort-mark"></span></th>
@@ -548,20 +662,22 @@
                                 $delta = $curr - $prev;
                                 [$typeLabel, $typeClass] = $typeInfo((int) $device['devtype']);
                             @endphp
-                            <tr class="device-row" data-num="{{ $loop->iteration }}" data-type="{{ $typeLabel }}" data-date="{{ $device['timestamp'] }}" data-devid="{{ $device['devid'] }}" data-location="{{ $device['location'] }}">
+                            @php $hasPanel = (bool) \App\Services\ReadingsService::kindOf((int) $device['devtype']); @endphp
+                            <tr class="device-row rd-dev-row" data-num="{{ $loop->iteration }}" data-type="{{ $typeLabel }}" data-date="{{ $device['timestamp'] }}" data-devid="{{ $device['devid'] }}" data-location="{{ $device['location'] }}" @if($hasPanel) data-panel-url="{{ route('readings.panel', [$object['id'], $device['devid']]) }}" @endif>
+                                <td>@if($hasPanel)<button type="button" class="rd-toggle" title="Näita seadme andmeid" aria-expanded="false">▶</button>@endif</td>
                                 <td class="row-number">{{ $loop->iteration }}</td>
                                 <td>{{ $device['location'] ?? '-' }}</td>
                                 <td class="device-id {{ $typeClass }}" title="{{ $typeLabel }}">
-                                    @if(\App\Services\ReadingsService::kindOf((int) $device['devtype']))
+                                    @if($hasPanel)
                                         <a href="{{ route('readings.device', [$object['id'], $device['devid'], 'back' => request()->fullUrl()]) }}" title="{{ $typeLabel }} — graafik, ajalugu, vead">{{ $device['devid'] }}</a>
                                     @else
                                         {{ $device['devid'] }}
                                     @endif
                                 </td>
-                                <td style="text-align:right;">{{ number_format($curr, 3, '.', '') }}</td>
-                                <td style="text-align:right;">{{ number_format($prev, 3, '.', '') }}</td>
-                                <td style="text-align:right;">{{ number_format($delta, 3, '.', '') }}</td>
-                                <td>{{ $device['date'] }}</td>
+                                <td class="dv-curr" style="text-align:right;">{{ number_format($curr, 3, '.', '') }}</td>
+                                <td class="dv-prev" style="text-align:right;">{{ number_format($prev, 3, '.', '') }}</td>
+                                <td class="dv-delta" style="text-align:right;">{{ number_format($delta, 3, '.', '') }}</td>
+                                <td class="dv-date {{ $device['err_class'] ? 'dv-stale' : '' }}">{{ $device['date'] }}</td>
                                 <td style="text-align:center;" @if($device['err_class']) title="Andmed vanemad kui 3 päeva" @endif>{{ $device['err_class'] ? '⚠️' : 'OK' }}</td>
                             </tr>
                         @endforeach
@@ -722,6 +838,7 @@
 @endsection
 
 @section('extra-scripts')
+    @include('readings._panel-script')
     <script>
         // Таблица приборов: сортировка по №, Korter, ID, Kuupäev; тип прибора — цветом номера (повторный клик — обратный порядок),
         // поиск и показ порциями по 25 строк — следующая порция при прокрутке до конца, как в списке объектов.
@@ -733,10 +850,34 @@
         let deviceLimit = DEVICE_STEP;
         const sortState = { key: 'num', dir: 1 };
 
+        // Стрелка ▶ у водомеров / jaoturite: данные прибора подгружаются только при раскрытии строки
+        const fmt = value => Number(value).toFixed(3);
+        const devicePanels = deviceBody ? window.initDevicePanels({
+            body: deviceBody,
+            wrap: deviceBody.closest('.device-table-wrap'),
+            rowSelector: 'tr.device-row',
+            onUpdate: (row, device, changed) => {
+                row.querySelector('.dv-curr').textContent = fmt(device.mvalue_raw);
+                row.querySelector('.dv-prev').textContent = fmt(device.prev_value_raw);
+                row.querySelector('.dv-delta').textContent = fmt(device.mvalue_raw - device.prev_value_raw);
+                row.querySelector('.dv-date').textContent = device.date_full;
+                row.dataset.date = device.timestamp;
+                if (changed) {
+                    const link = row.querySelector('.device-id a');
+                    if (link) {
+                        link.textContent = device.devid;
+                        const url = new URL(device.page_url, location.href);
+                        url.searchParams.set('back', location.href);
+                        link.href = url.toString();
+                    }
+                }
+            },
+        }) : null;
+
         function renderDevices() {
             if (!deviceBody) return;
             const query = deviceSearch ? deviceSearch.value.trim().toLowerCase() : '';
-            const rows = Array.from(deviceBody.rows);
+            const rows = Array.from(deviceBody.querySelectorAll('tr.device-row'));
             let visible = 0;
             let matched = 0;
             rows.forEach(row => {
@@ -746,6 +887,8 @@
                 const show = matches && (query || visible < deviceLimit);
                 if (show) visible++;
                 row.style.display = show ? '' : 'none';
+                const panelRow = devicePanels && devicePanels.panelRowOf(row);
+                if (panelRow) panelRow.style.display = row.style.display;
             });
             if (deviceMore) {
                 deviceMore.hidden = !!query || visible >= matched;
@@ -756,7 +899,7 @@
         function sortDevices(key, dir) {
             sortState.key = key;
             sortState.dir = dir;
-            const rows = Array.from(deviceBody.rows);
+            const rows = Array.from(deviceBody.querySelectorAll('tr.device-row'));
             rows.sort((a, b) => {
                 const x = a.dataset[key] || '';
                 const y = b.dataset[key] || '';
@@ -766,7 +909,12 @@
                 // При равенстве — исходный порядок
                 return (cmp || (Number(a.dataset.num) - Number(b.dataset.num))) * (cmp ? dir : 1);
             });
-            rows.forEach(row => deviceBody.appendChild(row));
+            rows.forEach(row => {
+                // Раскрытая панель прибора переезжает вместе со своей строкой
+                const panelRow = devicePanels && devicePanels.panelRowOf(row);
+                deviceBody.appendChild(row);
+                if (panelRow) deviceBody.appendChild(panelRow);
+            });
             document.querySelectorAll('.device-table th.sortable').forEach(th => {
                 th.querySelector('.sort-mark').textContent = th.dataset.sort === key ? (dir === 1 ? '▲' : '▼') : '';
             });

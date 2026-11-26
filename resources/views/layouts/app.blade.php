@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'AGR')</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <style>
         :root {
             --primary: oklch(0.62 0.19 254);
@@ -168,31 +169,93 @@
             padding: 32px 24px;
         }
 
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .navbar-content {
-                padding: 0 16px;
+        .navbar-burger {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        /* Адаптивность: меню целиком не помещается — ссылки уходят под кнопку ☰ */
+        @media (max-width: 1100px) {
+            .navbar-burger {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
             }
 
             .navbar-center {
-                margin-left: 16px;
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                margin: 0;
+                padding: 8px 12px 12px;
+                flex-direction: column;
                 gap: 2px;
+                border-radius: 0;
+                background: var(--surface);
+                border-bottom: 1px solid var(--border);
+                box-shadow: 0 12px 24px -12px oklch(0 0 0 / 0.18);
+            }
+
+            .navbar.menu-open .navbar-center {
+                display: flex;
             }
 
             .navbar-link {
-                padding: 9px 12px;
+                padding: 12px 16px;
+                font-size: 0.95rem;
+            }
+
+            .navbar-link.active {
+                background: var(--bg);
+                box-shadow: none;
             }
 
             .navbar-right {
-                gap: 12px;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-content {
+                padding: 0 12px;
+                height: 60px;
+            }
+
+            .navbar-logo {
+                width: 34px;
+                height: 34px;
             }
 
             .navbar-user-info {
                 display: none;
             }
 
+            .navbar-user-avatar {
+                width: 34px;
+                height: 34px;
+            }
+
+            .navbar-btn {
+                padding: 8px 12px;
+            }
+
             .main-content {
-                padding: 16px 12px;
+                padding: 12px 10px;
+            }
+
+            /* 16px — иначе iOS увеличивает страницу при фокусе на поле */
+            input, select, textarea {
+                font-size: 16px !important;
             }
         }
 
@@ -256,6 +319,9 @@
                     @csrf
                     <button type="submit" class="navbar-btn">Logi välja</button>
                 </form>
+
+                <button type="button" class="navbar-burger" aria-label="Menüü" aria-expanded="false"
+                    onclick="var open = this.closest('.navbar').classList.toggle('menu-open'); this.setAttribute('aria-expanded', open); this.textContent = open ? '✕' : '☰';">☰</button>
             </div>
         </div>
     </nav>
@@ -266,6 +332,25 @@
     </div>
 
     @yield('extra-scripts')
+
+    {{-- Даты: родной datetime-local показывает формат локали ОС (MM/DD/YYYY, AM/PM).
+         flatpickr показывает дд/мм/гггг ЧЧ:мм (24 ч), а на сервер уходит прежнее значение Y-m-d\TH:i --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/et.js"></script>
+    <script>
+        // initDatePickers(root) — и для блоков, подгруженных позже (например, панель прибора)
+        window.initDatePickers = function (root) {
+            if (!window.flatpickr) return;
+            const common = { locale: 'et', altInput: true, allowInput: true, disableMobile: true };
+            (root || document).querySelectorAll('input[type="datetime-local"]').forEach(el => flatpickr(el, Object.assign({
+                enableTime: true, time_24hr: true, dateFormat: 'Y-m-d\\TH:i', altFormat: 'd/m/Y H:i',
+            }, common)));
+            (root || document).querySelectorAll('input[type="date"]').forEach(el => flatpickr(el, Object.assign({
+                dateFormat: 'Y-m-d', altFormat: 'd/m/Y',
+            }, common)));
+        };
+        window.initDatePickers(document);
+    </script>
 
     <script>
         // Возврат к спискам без прыжка наверх: позиция прокрутки (и состояние списка,

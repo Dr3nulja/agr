@@ -69,12 +69,14 @@ Route::middleware(['check.session', 'log.action'])->group(function () {
     Route::get('/objects/{object}/readings/export.xlsx', [ReadingsController::class, 'xlsx'])->name('readings.xlsx');
     Route::get('/objects/{object}/readings/print', [ReadingsController::class, 'print'])->name('readings.print');
     Route::get('/objects/{object}/readings/{devid}', [ReadingsController::class, 'device'])->name('readings.device')->whereNumber('devid');
+    Route::get('/objects/{object}/readings/{devid}/panel', [ReadingsController::class, 'panel'])->name('readings.panel')->whereNumber('devid');
     Route::middleware('admin.only')->group(function () {
         Route::post('/objects/{object}/readings/fix-month', [ReadingsController::class, 'fixMonth'])->name('readings.fix-month');
         Route::post('/objects/{object}/readings/{devid}/history', [ReadingsController::class, 'storeHistory'])->name('readings.history.store')->whereNumber('devid');
         Route::put('/objects/{object}/readings/{devid}/history/{row}', [ReadingsController::class, 'updateHistory'])->name('readings.history.update')->whereNumber(['devid', 'row']);
         Route::delete('/objects/{object}/readings/{devid}/history/{row}', [ReadingsController::class, 'destroyHistory'])->name('readings.history.destroy')->whereNumber(['devid', 'row']);
         Route::put('/objects/{object}/readings/{devid}/current', [ReadingsController::class, 'updateCurrent'])->name('readings.current.update')->whereNumber('devid');
+        Route::post('/objects/{object}/readings/{devid}/replace', [ReadingsController::class, 'replaceDevice'])->name('readings.replace')->whereNumber('devid');
     });
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('objects.destroy')->middleware('admin.only');
     Route::post('/objects/{object}/command', [ObjectsController::class, 'sendCommand'])->name('objects.command')->middleware('admin.only');

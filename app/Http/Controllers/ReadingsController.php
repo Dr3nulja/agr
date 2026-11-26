@@ -51,22 +51,60 @@ class ReadingsController extends Controller
     }
 
     /**
-     * История одного прибора и формы ручной правки
+     * История одного прибора и формы ручной правки (отдельная страница)
      */
     public function device(Request $request, $object, int $devid)
     {
         $object = AgrObject::findOrFail($object);
-        $device = $this->findDevice($object, $devid);
-        $history = $this->readings->history((int) $object->id, $device);
 
-        return view('readings.device', [
-            'object' => $object,
-            'device' => $device,
-            'history' => $history,
-            'problems' => $this->withLeaks(ReadingsService::problems($device, $history), (int) $object->id, $devid),
-            'corrections' => $this->readings->corrections((int) $object->id, $devid),
+        return view('readings.device', $this->deviceData($object, $devid) + [
             'back' => $request->query('back'),
         ]);
+    }
+
+    /**
+     * То же содержимое без шапки — подгружается в раскрывающуюся строку списка
+     */
+    public function panel($object, int $devid)
+    {
+        $object = AgrObject::findOrFail($object);
+
+        return view('readings._device-panel', $this->deviceData($object, $devid) + ['inPanel' => true]);
+    }
+
+    /**
+     * Замена прибора: новый номер вместо старого, при желании — начальный показатель
+     */
+    public function replaceDevice(Request $request, $object, int $devid)
+    {
+        $object = AgrObject::findOrFail($object);
+        $device = $this->findDevice($object, $devid);
+        $validated = $request->validate([
+            'new_devid' => 'required|integer|min:1|max:4294967295',
+            'start_value' => 'nullable|numeric|min:0',
+            'start_date' => 'nullable|date|required_with:start_value',
+        ], [
+            'new_devid.required' => 'Sisesta uus seadme number',
+            'new_devid.integer' => 'Seadme number peab olema täisarv',
+            'start_date.required_with' => 'Sisesta algnäidu kuupäev',
+        ]);
+
+        $newDevice = $this->readings->replaceDevice(
+            (int) $object->id,
+            $device,
+            (int) $validated['new_devid'],
+            isset($validated['start_value']) ? (float) $validated['start_value'] : null,
+            isset($validated['start_date']) ? Carbon::parse($validated['start_date'])->format('Y-m-d H:i:s') : null,
+            $this->userName()
+        );
+        $this->logAction(sprintf('Replaced device %d with %d in object #%d', $devid, $validated['new_devid'], $object->id));
+
+        $message = sprintf('Seade %d asendatud seadmega %d', $devid, $validated['new_devid']);
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message, 'device' => $this->deviceSummary($object, $newDevice)]);
+        }
+
+        return redirect()->route('readings.device', [$object->id, $validated['new_devid']])->with('success', $message);
     }
 
     public function storeHistory(Request $request, $object, int $devid)
@@ -78,7 +116,7 @@ class ReadingsController extends Controller
         $this->readings->addHistory((int) $object->id, $device, $validated['date'], (float) $validated['value'], $this->userName());
         $this->logAction(sprintf('Added manual reading %s for device %d of object #%d', $validated['value'], $devid, $object->id));
 
-        return back()->with('success', 'Näit lisatud');
+        return $this->done($request, $object, $devid, 'Näit lisatud');
     }
 
     public function updateHistory(Request $request, $object, int $devid, int $row)
@@ -90,10 +128,10 @@ class ReadingsController extends Controller
         $this->readings->updateHistory((int) $object->id, $device, $row, $validated['date'], (float) $validated['value'], $this->userName());
         $this->logAction(sprintf('Edited reading #%d of device %d of object #%d', $row, $devid, $object->id));
 
-        return back()->with('success', 'Näit muudetud');
+        return $this->done($request, $object, $devid, 'Näit muudetud');
     }
 
-    public function destroyHistory($object, int $devid, int $row)
+    public function destroyHistory(Request $request, $object, int $devid, int $row)
     {
         $object = AgrObject::findOrFail($object);
         $device = $this->findDevice($object, $devid);
@@ -101,7 +139,7 @@ class ReadingsController extends Controller
         $this->readings->deleteHistory((int) $object->id, $device, $row, $this->userName());
         $this->logAction(sprintf('Deleted reading #%d of device %d of object #%d', $row, $devid, $object->id));
 
-        return back()->with('success', 'Näit kustutatud');
+        return $this->done($request, $object, $devid, 'Näit kustutatud');
     }
 
     public function updateCurrent(Request $request, $object, int $devid)
@@ -126,7 +164,7 @@ class ReadingsController extends Controller
         ], $this->userName());
         $this->logAction(sprintf('Edited current values of device %d of object #%d', $devid, $object->id));
 
-        return back()->with('success', 'Praegused väärtused salvestatud');
+        return $this->done($request, $object, $devid, 'Praegused väärtused salvestatud');
     }
 
     public function fixMonth(Request $request, $object)
@@ -209,6 +247,53 @@ class ReadingsController extends Controller
         usort($problems, fn ($a, $b) => strcmp((string) $b['date'], (string) $a['date']));
 
         return $problems;
+    }
+
+    /**
+     * Ответ на правку: JSON для панели в списке (без перезагрузки страницы), иначе — назад
+     */
+    private function done(Request $request, AgrObject $object, int $devid, string $message)
+    {
+        if (! $request->expectsJson()) {
+            return back()->with('success', $message);
+        }
+
+        $device = $this->readings->device((int) $object->id, $devid);
+
+        return response()->json(['ok' => true, 'message' => $message, 'device' => $device ? $this->deviceSummary($object, $device) : null]);
+    }
+
+    /**
+     * Что нужно строке списка, чтобы обновиться без перезагрузки
+     */
+    private function deviceSummary(AgrObject $object, array $device): array
+    {
+        return [
+            'devid' => $device['devid'],
+            'value' => $device['value'] !== null ? number_format($device['value'], 3, '.', ' ') : '—',
+            'date' => $device['date'] ? date('d.m.Y', strtotime($device['date'])) : '—',
+            // Для «Seadmete näidud» на странице объекта (тот же формат, что в getDevices)
+            'mvalue_raw' => (float) ($device['mvalue'] ?? 0),
+            'prev_value_raw' => (float) ($device['prev_value'] ?? 0),
+            'date_full' => $device['date'] ? date('H:i:s d.m.Y', strtotime($device['date'])) : '',
+            'timestamp' => $device['date'] ? strtotime($device['date']) : 0,
+            'panel_url' => route('readings.panel', [$object->id, $device['devid']]),
+            'page_url' => route('readings.device', [$object->id, $device['devid']]),
+        ];
+    }
+
+    private function deviceData(AgrObject $object, int $devid): array
+    {
+        $device = $this->findDevice($object, $devid);
+        $history = $this->readings->history((int) $object->id, $device);
+
+        return [
+            'object' => $object,
+            'device' => $device,
+            'history' => $history,
+            'problems' => $this->withLeaks(ReadingsService::problems($device, $history), (int) $object->id, $devid),
+            'corrections' => $this->readings->corrections((int) $object->id, $devid),
+        ];
     }
 
     private function findDevice(AgrObject $object, int $devid): array

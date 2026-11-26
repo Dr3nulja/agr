@@ -394,6 +394,37 @@ class ReadingsService
     }
 
     /**
+     * Замена сломанного прибора: в object_N у той же строки (квартира, тип) меняется номер.
+     * История старого номера остаётся в mlog_N под старым devid. Если указан
+     * начальный показатель нового прибора — он пишется в историю и в текущие значения.
+     *
+     * @return array новый прибор в виде device()
+     */
+    public function replaceDevice(int $objectId, array $device, int $newDevid, ?float $startValue, ?string $startDate, string $user): array
+    {
+        if ($newDevid === $device['devid']) {
+            throw ValidationException::withMessages(['new_devid' => 'Uus number on sama mis praegune']);
+        }
+        if (DB::table('object_' . $objectId)->where('devid', $newDevid)->exists()) {
+            throw ValidationException::withMessages(['new_devid' => 'Seade ' . $newDevid . ' on selles objektis juba olemas']);
+        }
+
+        DB::transaction(function () use ($objectId, $device, $newDevid, $startValue, $startDate, $user) {
+            DB::table('object_' . $objectId)->where('devid', $device['devid'])->update(['devid' => $newDevid]);
+
+            $change = ['location' => $device['location'], 'devtype' => $device['devtype']];
+            $this->log($objectId, $device['devid'], 'devid_change', ['devid' => $device['devid']] + $change, ['devid' => $newDevid] + $change, $user);
+            $this->log($objectId, $newDevid, 'devid_change', ['devid' => $device['devid']] + $change, ['devid' => $newDevid] + $change, $user);
+
+            if ($startValue !== null) {
+                $this->addHistory($objectId, ['devid' => $newDevid] + $device, $startDate ?? now()->format('Y-m-d H:i:s'), $startValue, $user);
+            }
+        });
+
+        return $this->device($objectId, $newDevid);
+    }
+
+    /**
      * Зафиксировать показания месяца: снимок текущих значений всех приборов дома.
      * Повторная фиксация того же месяца перезаписывает снимок.
      */
