@@ -37,18 +37,27 @@ class InstallationController extends Controller
     {
         $stats = DB::table('mobile_reports')
             ->select('object_id', 'device_type')
-            ->selectRaw("count(*) as reports, count(distinct nullif(trim(apartment), '')) as apartments, max(created_at) as last_report")
+            ->selectRaw('count(*) as reports, max(created_at) as last_report')
             ->groupBy('object_id', 'device_type')
             ->get()
             ->groupBy('object_id');
+
+        // Квартиры с отчётами — отдельно: в прогресс идут только квартиры из списка объекта
+        $reportedApartments = DB::table('mobile_reports')
+            ->select('object_id', 'device_type', 'apartment')
+            ->whereNotNull('apartment')
+            ->distinct()
+            ->get()
+            ->groupBy(fn ($row) => $row->object_id . '|' . $row->device_type);
 
         $objects = AgrObject::query()
             ->where(fn ($query) => $query->whereHas('tasks')->orWhereIn('id', $stats->keys()))
             ->with('tasks')
             ->get(['id', 'address', 'City'])
-            ->map(function (AgrObject $object) use ($stats) {
+            ->map(function (AgrObject $object) use ($stats, $reportedApartments) {
                 $objectStats = $stats->get($object->id, collect())->keyBy('device_type');
-                $flatCount = count($this->legacyObjectsService->getFlats((int) $object->id));
+                $flats = collect($this->legacyObjectsService->getFlats((int) $object->id))->pluck('location');
+                $flatCount = $flats->count();
                 $deviceTypes = $object->tasks->pluck('device_type')->merge($objectStats->keys())->unique()->sort()->values();
 
                 return (object) [
@@ -58,7 +67,7 @@ class InstallationController extends Controller
                     'lastReport' => $objectStats->max('last_report'),
                     'progress' => $deviceTypes->map(fn ($device) => $this->progress(
                         $device,
-                        (int) ($objectStats->get($device)->apartments ?? 0),
+                        $this->doneCount($reportedApartments->get($object->id . '|' . $device, collect())->pluck('apartment'), $flats),
                         $flatCount,
                         $object->tasks->where('device_type', $device)
                     )),
@@ -213,6 +222,12 @@ class InstallationController extends Controller
 
         $deviceTypes = $object->tasks->pluck('device_type')->merge($reports->pluck('device_type'))->unique()->sort()->values();
 
+        // Квартиры из отчётов, которых нет в списке квартир объекта (опечатка монтажника)
+        $knownFlats = $flats->map(fn ($location) => MobileReport::normalizeApartment($location))->flip();
+        $unknown = $flats->isEmpty() ? collect() : $apartments->keys()
+            ->reject(fn ($key) => $key === '' || $knownFlats->has($key))
+            ->flip();
+
         return [
             'object' => $object,
             'filters' => $filters,
@@ -221,14 +236,30 @@ class InstallationController extends Controller
             'reportCount' => $reports->count(),
             'flatCount' => $flats->count(),
             'missing' => $missing,
+            'unknown' => $unknown,
             'byDay' => $reports->groupBy(fn ($report) => $report->created_at?->format('Y-m-d'))->map->count()->sortKeys(),
             'progress' => $deviceTypes->map(fn ($device) => $this->progress(
                 $device,
-                $reports->where('device_type', $device)->map(fn ($r) => MobileReport::normalizeApartment($r->apartment))->filter()->unique()->count(),
+                $this->doneCount($reports->where('device_type', $device)->pluck('apartment'), $flats),
                 $flats->count(),
                 $object->tasks->where('device_type', $device)
             )),
         ];
+    }
+
+    /**
+     * Сколько квартир сделано. Есть список квартир объекта — считаем только квартиры из него,
+     * иначе отчёт с опечаткой в номере («12» в доме на 9 квартир) завышает процент.
+     */
+    private function doneCount(Collection $apartments, Collection $flats): int
+    {
+        $done = $apartments->map(fn ($apartment) => MobileReport::normalizeApartment($apartment))->filter()->unique();
+
+        if ($flats->isEmpty()) {
+            return $done->count();
+        }
+
+        return $done->intersect($flats->map(fn ($location) => MobileReport::normalizeApartment($location)))->count();
     }
 
     private function progress(string $device, int $done, int $flatCount, Collection $tasks): object

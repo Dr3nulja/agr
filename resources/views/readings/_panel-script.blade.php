@@ -11,6 +11,16 @@
         var rowSelector = opts.rowSelector;
         var columns = body.closest('table').tHead.rows[0].cells.length;
 
+        // Сессия истекла: сервер перенаправляет на вход и отдаёт HTML с кодом 200 — это не успех
+        var SESSION_EXPIRED = 'Seanss aegus — värskenda lehte (F5) ja logi vajadusel uuesti sisse. Muudatust ei salvestatud.';
+        function httpError(status) {
+            if (status === 419 || status === 401) return SESSION_EXPIRED;
+            if (status === 403) return 'Selleks pole sul õigusi.';
+            if (status === 404) return 'Seadet ei leitud — võib-olla see vahetati. Värskenda lehte.';
+            if (status >= 500) return 'Serveri viga (' + status + '). Proovi uuesti.';
+            return 'Viga ' + status;
+        }
+
         function panelRowOf(row) {
             var next = row.nextElementSibling;
             return next && next.classList.contains('rd-panel-row') ? next : null;
@@ -50,7 +60,8 @@
             panel.classList.add('busy');
             return fetch(row.dataset.panelUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function (response) {
-                    if (!response.ok) throw new Error('Laadimine ebaõnnestus (' + response.status + ')');
+                    if (response.redirected) throw new Error(SESSION_EXPIRED);
+                    if (!response.ok) throw new Error('Laadimine ebaõnnestus: ' + httpError(response.status));
                     return response.text();
                 })
                 .then(function (html) {
@@ -95,11 +106,15 @@
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             })
                 .then(function (response) {
-                    return response.json().catch(function () { return {}; }).then(function (data) {
-                        if (!response.ok) {
-                            var first = data.errors ? Object.values(data.errors)[0] : null;
-                            throw new Error((first && first[0]) || data.message || ('Viga ' + response.status));
+                    if (response.redirected) throw new Error(SESSION_EXPIRED);
+                    return response.json().catch(function () { return null; }).then(function (data) {
+                        if (response.status === 422 && data && data.errors) {
+                            var first = Object.values(data.errors)[0];
+                            throw new Error((first && first[0]) || httpError(422));
                         }
+                        if (!response.ok) throw new Error(httpError(response.status));
+                        // Успех — только JSON от контроллера; HTML вместо него значит, что запрос куда-то перенаправили
+                        if (!data) throw new Error(SESSION_EXPIRED);
                         return data;
                     });
                 })

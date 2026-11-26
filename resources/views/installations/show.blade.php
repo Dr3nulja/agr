@@ -35,6 +35,7 @@
         .inst-apartment > summary::before { content: '▸'; color: var(--text-muted); }
         .inst-apartment[open] > summary::before { content: '▾'; }
         .inst-apartment-name { font-weight: 600; min-width: 80px; }
+        .inst-unknown { font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; background: oklch(0.95 0.06 75); color: oklch(0.45 0.12 65); }
         .inst-apartment-body { padding: 0 14px 6px; }
         .inst-report { padding: 14px 0; border-top: 1px solid var(--border); }
         .inst-report-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
@@ -149,6 +150,9 @@
             <details class="inst-apartment">
                 <summary>
                     <span class="inst-apartment-name">Krt {{ $reports->first()->apartment ?: '—' }}</span>
+                    @if($unknown->has(\App\Models\MobileReport::normalizeApartment($reports->first()->apartment)))
+                        <span class="inst-unknown" title="Sellist korterit objekti nimekirjas pole — kontrolli numbrit">⚠️ pole nimekirjas</span>
+                    @endif
                     @foreach($reports->groupBy('device_type') as $device => $deviceReports)
                         <span class="task-badge task-badge-{{ $device }}">{{ \App\Models\ObjectTask::DEVICE_TYPES[$device] ?? $device }} × {{ $deviceReports->count() }}</span>
                     @endforeach

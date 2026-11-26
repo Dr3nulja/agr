@@ -6,7 +6,7 @@
     <style>
         .card { padding: 24px; border-radius: 18px; background: var(--surface); box-shadow: 0 2px 10px -2px oklch(0 0 0 / 0.06); max-width: 600px; margin-bottom: 20px; }
         .meta { color: var(--text-muted); margin: 4px 0 0; }
-        .field { margin-top: 16px; display: grid; gap: 8px; }
+        .field { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
         input[type="file"] { padding: 8px; }
         .actions { margin-top: 20px; display: flex; gap: 12px; }

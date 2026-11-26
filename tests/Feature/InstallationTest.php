@@ -102,6 +102,22 @@ class InstallationTest extends TestCase
             ->assertSee('2 / 4 krt · 50%');
     }
 
+    public function test_apartment_outside_flat_list_is_flagged_and_not_counted(): void
+    {
+        $this->report('1');
+        $this->report('99'); // опечатка монтажника: такой квартиры в доме нет
+
+        $this->withSession($this->session)->get('/installations')
+            ->assertOk()
+            ->assertSee('1 / 4 krt · 25%');
+
+        $this->withSession($this->session)->get('/installations/' . $this->object->id)
+            ->assertOk()
+            ->assertSee('1 / 4 krt · 25%')
+            ->assertSeeInOrder(['Krt 99', 'pole nimekirjas'])
+            ->assertSee('Aruandeta korterid (3)');
+    }
+
     public function test_show_groups_by_apartment_and_lists_missing_flats(): void
     {
         $this->report('10');

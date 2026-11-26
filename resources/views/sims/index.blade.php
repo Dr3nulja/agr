@@ -59,6 +59,27 @@
         .sim-manage-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; width: 100%; margin-bottom: -4px; }
         .sim-empty { padding: 20px; text-align: center; background: var(--bg); border: 2px dashed var(--border); border-radius: 8px; color: var(--text-muted); }
         .sim-pagination { margin-top: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+        /* Телефон: строка SIM — карточка, без горизонтальной прокрутки */
+        @media (max-width: 700px) {
+            .sim-field-wide { grid-column: 1 / -1; }
+            .sim-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .sim-table thead { display: none; }
+            .sim-table, .sim-table tbody { display: block; }
+            .sim-table tbody > tr:not(.sim-manage-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+            .sim-table tbody > tr > td { border: 0; padding: 0; }
+            .sim-table td { grid-column: 1 / -1; }
+            .sim-table .sim-c-number { grid-column: 1; font-weight: 600; font-size: 0.95rem; }
+            .sim-table .sim-c-status { grid-column: 2; grid-row: 1; text-align: right; }
+            .sim-table .sim-c-iccid { color: var(--text-muted); font-size: 0.8rem; word-break: break-all; }
+            .sim-table .sim-c-pin::before { content: 'PIN / PUK: '; font-family: inherit; }
+            .sim-table .sim-c-comment:empty { display: none; }
+            .sim-table .sim-actions { width: auto; margin-top: 6px; }
+            .sim-table .sim-actions .sim-btn { width: 100%; }
+            .sim-table .sim-manage-row:not([hidden]) { display: block; }
+            .sim-table .sim-manage-row > td { display: block; padding: 12px; border-radius: 10px; }
+            .sim-manage form > * { flex: 1 1 100%; }
+        }
     </style>
 @endsection
 
@@ -170,18 +191,18 @@
                     <tbody>
                         @foreach($sims as $sim)
                             <tr>
-                                <td class="sim-mono">{{ $sim->number ?: '—' }}</td>
-                                <td class="sim-mono">{{ $sim->iccid ?: '—' }}</td>
+                                <td class="sim-mono sim-c-number">{{ $sim->number ?: '—' }}</td>
+                                <td class="sim-mono sim-c-iccid">{{ $sim->iccid ?: '—' }}</td>
                                 @if($isAdmin)
-                                    <td class="sim-mono sim-muted">
+                                    <td class="sim-mono sim-muted sim-c-pin">
                                         {{ $sim->pin1 ?: '—' }} / {{ $sim->puk1 ?: '—' }}
                                         @if($sim->pin2 || $sim->puk2)
                                             <br>{{ $sim->pin2 ?: '—' }} / {{ $sim->puk2 ?: '—' }}
                                         @endif
                                     </td>
                                 @endif
-                                <td><span class="sim-badge sim-badge-{{ $sim->status }}">{{ $sim->statusLabel() }}</span></td>
-                                <td>
+                                <td class="sim-c-status"><span class="sim-badge sim-badge-{{ $sim->status }}">{{ $sim->statusLabel() }}</span></td>
+                                <td class="sim-c-where">
                                     @if($sim->isAssigned())
                                         @if($sim->object)
                                             <a href="{{ route('objects.show', $sim->object_id) }}">{{ $sim->object->address }}</a>
@@ -197,7 +218,7 @@
                                         <span class="sim-muted">Laos</span>
                                     @endif
                                 </td>
-                                <td class="sim-muted">{{ $sim->comment }}</td>
+                                <td class="sim-muted sim-c-comment">{{ $sim->comment }}</td>
                                 @if($isAdmin)
                                     <td class="sim-actions">
                                         <button type="button" class="sim-btn sim-manage-toggle" aria-expanded="false" aria-controls="sim-manage-{{ $sim->id }}">Halda ▾</button>

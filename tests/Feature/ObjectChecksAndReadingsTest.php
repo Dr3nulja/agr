@@ -153,7 +153,7 @@ class ObjectChecksAndReadingsTest extends TestCase
 
         $this->withSession($session)->get('/objects?manager[]=2&manager[]=3')
             ->assertSee('KAT maja')->assertSee('REG maja')->assertDontSee('NAT maja')
-            ->assertSee('<td>Prem</td>', false)->assertSee('<td>AGR</td>', false);
+            ->assertSee('<td class="company-cell">Prem</td>', false)->assertSee('<td class="company-cell">AGR</td>', false);
 
         // В фильтре «Paigaldaja» — две отдельные компании
         $this->withSession($session)->get('/objects')

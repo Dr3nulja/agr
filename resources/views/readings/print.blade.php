@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <title>{{ $title }} — {{ $object->address }}</title>
     <style>
         @page { size: A4 landscape; margin: 12mm 10mm; }
@@ -25,6 +26,8 @@
         th { background: #f0f2f8; font-weight: 600; }
         td.num, th.num { text-align: right; }
         tr { break-inside: avoid; }
+        /* На экране телефона широкая таблица прокручивается сама, а не вся страница */
+        @media screen { .table-scroll { overflow-x: auto; } }
         @media print {
             .toolbar { display: none; }
             .page { padding: 0; }
@@ -59,6 +62,7 @@
 
         @php $periodsDesc = array_reverse($periods); @endphp
         <p class="muted" style="margin: 12px 0 0;">Kuu veerus — näit (maht) kuu lõpus. Seadme nr värv: <span class="tone-cold">külm vesi</span>, <span class="tone-hot">soe vesi</span>, <span class="tone-heat">jaotur</span>.</p>
+        <div class="table-scroll">
         <table>
             <thead>
                 <tr>
@@ -88,6 +92,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </body>
 </html>

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <title>@yield('title', 'AGR')</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
@@ -23,6 +24,8 @@
         }
 
         * { box-sizing: border-box; }
+        /* Поле выбора файла не шире экрана (на телефоне «Выбор файла» вылезал за край) */
+        input[type="file"] { max-width: 100%; }
 
         body {
             margin: 0;
@@ -341,13 +344,20 @@
         // initDatePickers(root) — и для блоков, подгруженных позже (например, панель прибора)
         window.initDatePickers = function (root) {
             if (!window.flatpickr) return;
-            const common = { locale: 'et', altInput: true, allowInput: true, disableMobile: true };
+            // Подпись <label for="..."> указывала на скрытое исходное поле — переводим её на видимое
+            const linkLabel = (dates, str, fp) => {
+                const id = fp.input.id;
+                if (!fp.altInput || !id) return;
+                fp.altInput.id = id + '-alt';
+                document.querySelectorAll('label[for="' + id + '"]').forEach(label => label.htmlFor = fp.altInput.id);
+            };
+            const common = { locale: 'et', altInput: true, allowInput: true, disableMobile: true, onReady: linkLabel };
             (root || document).querySelectorAll('input[type="datetime-local"]').forEach(el => flatpickr(el, Object.assign({
                 enableTime: true, time_24hr: true, dateFormat: 'Y-m-d\\TH:i', altFormat: 'd/m/Y H:i',
-            }, common)));
+            }, common)).altInput?.setAttribute('placeholder', el.placeholder || 'pp/kk/aaaa tt:mm'));
             (root || document).querySelectorAll('input[type="date"]').forEach(el => flatpickr(el, Object.assign({
                 dateFormat: 'Y-m-d', altFormat: 'd/m/Y',
-            }, common)));
+            }, common)).altInput?.setAttribute('placeholder', el.placeholder || 'pp/kk/aaaa'));
         };
         window.initDatePickers(document);
     </script>
