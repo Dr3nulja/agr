@@ -16,6 +16,11 @@
         .rd-tone-cold { color: oklch(0.5 0.17 250); }
         .rd-tone-hot { color: oklch(0.55 0.19 25); }
         .rd-tone-heat { color: oklch(0.58 0.15 60); }
+        @media (max-width: 640px) {
+            .card { padding: 14px 12px; border-radius: 14px; margin-bottom: 12px; }
+            .rd-grid { gap: 0; }
+            h2 { font-size: 1.2rem; }
+        }
     </style>
     @include('readings._device-styles')
 @endsection

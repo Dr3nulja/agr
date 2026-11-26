@@ -21,7 +21,30 @@
     .rd-box { padding: 16px 18px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
     .rd-box h3 { font-size: 1rem; margin: 0 0 10px; }
     .rd-panel .rd-history { max-height: 380px; }
-    @media (max-width: 900px) { .rd-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .rd-grid { grid-template-columns: minmax(0, 1fr); } }
+
+    /* Телефон: поля форм делят строку и сжимаются, а не вылезают за край */
+    @media (max-width: 640px) {
+        .rd-form { gap: 8px; }
+        .rd-form .rd-field { flex: 1 1 130px; min-width: 0; }
+        .rd-form .rd-field .rd-input { width: 100% !important; min-width: 0; }
+        .rd-form > .rd-btn-primary { flex: 1 1 100%; justify-content: center; }
+        .rd-panel { padding: 8px; }
+        .rd-box { padding: 12px; border-radius: 12px; }
+        .rd-panel .rd-grid { gap: 10px; margin-bottom: 10px; }
+        .rd-replace { padding: 12px; }
+        .rd-section + .rd-section { margin-top: 18px; }
+        /* Дата со временем — на всю строку, иначе обрезается */
+        .rd-form .rd-field:has(input[type="datetime-local"], .flatpickr-input) { flex-basis: 100%; }
+        /* История: дата на первой строке, показание и 💾 — на второй, ✕ справа */
+        .rd-dtable td { padding: 6px 4px; }
+        .rd-dtable thead { display: none; }
+        .rd-dtable .rd-form { flex-wrap: wrap !important; gap: 6px !important; }
+        .rd-dtable .rd-form .rd-input { min-width: 0; padding: 6px 8px; }
+        .rd-dtable .rd-form input[type="text"], .rd-dtable .rd-form input[type="datetime-local"] { flex: 1 1 100%; width: 100%; }
+        .rd-dtable .rd-form input[name="value"] { flex: 1 1 auto; width: auto !important; }
+        .rd-dtable .rd-btn { padding: 6px 10px; }
+    }
 
     /* Раскрывающаяся строка прибора в таблице (стрелка ▶ и подгружаемая панель) */
     .rd-dev-row[data-panel-url] { cursor: pointer; }

@@ -417,6 +417,83 @@
         .create-btn:hover {
             opacity: 0.9;
         }
+
+        /* Телефон: строки объектов — компактные карточки во всю ширину, без прокрутки вбок.
+           1) адрес + Vaata / ⋯   2) город · система · фирма · seadmeid · FW
+           3) описание в одну строку   4) статус, esitatud, ошибки */
+        @media (max-width: 700px) {
+            .header-section h2 { font-size: 1.3rem; }
+            .header-section p { font-size: 0.85rem; }
+
+            /* Сводка и фильтры — плотнее, чтобы список начинался на первом экране */
+            .filter-section { padding: 10px; border-radius: 14px; margin-bottom: 8px; }
+            .filter-section .chip { padding: 4px 10px; font-size: 0.78rem; }
+            .filter-section .filter-group > div { gap: 6px !important; }
+            .filter-group { width: 100%; }
+            .filter-chips { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; width: 100%; }
+            .filter-chips .filter-input { width: 100%; min-width: 0; padding: 7px 8px !important; }
+            .filter-chips input[name="search"] { grid-column: 1 / -1; }
+            .filter-chips .manager-filter { grid-column: 1 / -1; justify-content: space-between; }
+            .filter-chips > button.chip { grid-column: 1 / -1; justify-content: center; padding: 8px; }
+
+            .objects-table { background: none; box-shadow: none; }
+            .table-responsive { overflow: visible; }
+            .objects-table table,
+            .objects-table tbody { display: block; }
+            .objects-table thead { display: none; }
+
+            .objects-table tbody tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 4px 6px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                box-shadow: 0 1px 4px -2px oklch(0 0 0 / 0.08);
+            }
+
+            .objects-table tbody tr:not(.inactive-row):not(.selected-row):not(.water-row) { background: var(--surface); }
+
+            .objects-table tbody tr::before { content: ''; order: 3; flex-basis: 100%; height: 0; }
+
+            .objects-table td { padding: 0; font-size: 0.8rem; max-width: none; }
+
+            .objects-table .address-cell { order: 1; flex: 1 1 0; min-width: 0; font-size: 1rem; font-weight: 600; }
+            .objects-table .actions-cell { order: 2; flex: none; }
+            .objects-table .view-btn { padding: 5px 10px; font-size: 0.82rem; border-radius: 8px; }
+            .objects-table .menu-btn { padding: 5px 10px; border-radius: 8px; }
+
+            .objects-table .city-cell { order: 4; color: var(--text-muted); }
+            .objects-table .system-cell { order: 5; color: var(--text-muted); white-space: nowrap; }
+            .objects-table .company-cell { order: 6; color: var(--text-muted); }
+            .objects-table .devices-cell { order: 7; color: var(--text-muted); white-space: nowrap; }
+            .objects-table .fw-cell { order: 8; font-size: 0.75rem; white-space: nowrap; }
+            .objects-table .system-cell::before,
+            .objects-table .company-cell::before,
+            .objects-table .devices-cell::before { content: '· '; }
+            .objects-table .devices-cell::after { content: ' seadet'; }
+            .objects-table .fw-cell::before { content: '· FW '; font-family: 'Sora', system-ui, sans-serif; }
+
+            .objects-table .description-cell {
+                order: 9;
+                flex-basis: 100%;
+                font-size: 0.78rem;
+                white-space: normal;
+                display: -webkit-box;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .objects-table .description-cell br { display: none; }
+
+            .objects-table .status-cell { order: 10; }
+            .objects-table .checked-cell { order: 11; }
+            .objects-table .status-pill { font-size: 0.72rem; padding: 2px 8px; }
+            .objects-table .errors-cell { order: 12; margin-left: auto; display: flex; gap: 4px; }
+            .objects-table .error-icon { width: 22px; height: 22px; margin: 0; font-size: 0.72rem; }
+        }
     </style>
 @endsection
 

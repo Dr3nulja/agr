@@ -33,6 +33,27 @@
         .rd-fixed { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
         .rd-fixed a { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.85rem; }
         .rd-fixed a.active { border-color: var(--primary); color: var(--primary); }
+        /* Телефон: фильтры по два в ряд, таблица прокручивается вбок, а Korter / Seadme nr остаются на месте */
+        @media (max-width: 640px) {
+            .card { padding: 14px 12px; border-radius: 14px; margin-bottom: 12px; }
+            h2 { font-size: 1.2rem; }
+            .rd-actions { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .rd-actions .rd-btn { justify-content: center; padding: 8px 6px; font-size: 0.82rem; }
+            .rd-filter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+            .rd-filter .rd-input { width: 100%; min-width: 0; }
+            .rd-filter > .rd-btn-primary { grid-column: 1 / -1; justify-content: center; }
+            #rdSearch { width: 100% !important; }
+            .rd-table { font-size: 0.82rem; }
+            .rd-table th, .rd-table td { padding: 7px 6px; }
+            .rd-table > thead > tr > :nth-child(-n+3),
+            .rd-table > tbody > tr.rd-dev-row > :nth-child(-n+3) { position: sticky; z-index: 1; background: var(--surface); }
+            .rd-table > thead > tr > :nth-child(-n+3) { z-index: 2; background: oklch(0.97 0.006 270); }
+            .rd-table > * > tr > :nth-child(1) { left: 0; width: 34px; min-width: 34px; }
+            .rd-table > * > tr > :nth-child(2) { left: 34px; width: 62px; min-width: 62px; max-width: 62px; overflow: hidden; text-overflow: ellipsis; }
+            .rd-table > * > tr > :nth-child(3) { left: 96px; }
+            .rd-table > tbody > tr.rd-dev-row > .rd-devid { box-shadow: 4px 0 6px -4px oklch(0 0 0 / 0.15); }
+            .rd-table > tbody > tr.rd-dev-row.open > td { background: oklch(0.96 0.02 254); }
+        }
     </style>
     @include('readings._device-styles')
 @endsection
